@@ -200,6 +200,15 @@
             <div class="p-8 pb-20 space-y-8">
                 
                 <div id="view-dashboard" class="hidden-el space-y-8">
+                    <!-- Global Stats Panel (CAPEX) -->
+                    <div id="global-stats-panel" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden-el">
+                        <div class="bg-indigo-900/50 p-6 rounded-3xl border border-indigo-500/30 relative overflow-hidden shadow-xl">
+                            <div class="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl"></div>
+                            <p id="global-capex-label" class="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2"><i class="fas fa-briefcase text-indigo-400 mr-1"></i> Total CAPEX</p>
+                            <h4 id="global-capex" class="text-3xl font-black text-white mono truncate">Rp 0</h4>
+                        </div>
+                    </div>
+
                     <!-- Project Selector (Semua Role kecuali Investor bisa melihat multi-proyek jika ada) -->
                     <div id="project-selector-box" class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
@@ -893,6 +902,36 @@
             if(document.getElementById('view-iot').classList.contains('hidden-el') === false) renderIoT();
         };
 
+        function getTierCapex(tier) {
+            const vals = { 'A': 28500000, 'B': 22250000, 'C': 15750000, 'D': 14250000 };
+            return vals[tier] || 0;
+        }
+
+        function updateGlobalStats() {
+            const globalPanel = document.getElementById('global-stats-panel');
+            const elCapex = document.getElementById('global-capex');
+            const labelCapex = document.getElementById('global-capex-label');
+            if(!globalPanel) return;
+
+            if(activeUser.role === 'admin') {
+                globalPanel.classList.remove('hidden-el');
+                labelCapex.innerHTML = '<i class="fas fa-briefcase text-indigo-400 mr-1"></i> Total CAPEX Seluruh Investor';
+                let totalCapex = 0;
+                // Menjumlahkan nilai CAPEX dari semua investor yang telah diverifikasi
+                dbUsers.filter(u => u.role === 'investor' && u.verified).forEach(inv => {
+                    totalCapex += getTierCapex(inv.tier);
+                });
+                elCapex.innerText = formatRp(totalCapex);
+            } else if (activeUser.role === 'investor') {
+                globalPanel.classList.remove('hidden-el');
+                labelCapex.innerHTML = `<i class="fas fa-briefcase text-indigo-400 mr-1"></i> Total CAPEX Anda (Tier ${activeUser.tier || '-'})`;
+                elCapex.innerText = formatRp(getTierCapex(activeUser.tier));
+            } else {
+                // Sembunyikan untuk Customer / pihak lain agar kerahasiaan investasi terjaga
+                globalPanel.classList.add('hidden-el');
+            }
+        }
+
         // RUMUS FINANSIAL UTAMA
         function calculateFinance() {
             if(!activeProject) return null;
@@ -916,6 +955,7 @@
         }
 
         function renderFinance() {
+            updateGlobalStats();
             updateProjectSelector();
             const emptyMsg = document.getElementById('empty-project-msg');
             const matrix = document.getElementById('finance-matrix');
