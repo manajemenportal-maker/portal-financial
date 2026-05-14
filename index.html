@@ -680,6 +680,9 @@
                 if(btnPrint) btnPrint.classList.add('hidden-el');
             }
 
+            // Memastikan data yang di-render saat login sesuai dengan role
+            updateGlobalStats();
+            
             // Restore menu terakhir yang dibuka (jika ada), atau default ke dashboard
             const savedView = localStorage.getItem('ksa_view') || 'dashboard';
             switchView(savedView);
@@ -772,7 +775,17 @@
             if(u) { 
                 u.verified = true; 
                 localStorage.setItem('ksa_users', JSON.stringify(dbUsers)); 
-                renderUsers(); 
+                renderUsers();
+                
+                // Tambahan: Update Session jika user yang diverifikasi sedang login namun ditolak
+                // Walau jarang terjadi karena user ditolak, ini memastikan integritas data memory jika ia mencoba restoreSession
+                const savedStr = localStorage.getItem('ksa_session');
+                if(savedStr) {
+                    const parsed = JSON.parse(savedStr);
+                    if(parsed.id === u.id) {
+                         localStorage.setItem('ksa_session', JSON.stringify(u));
+                    }
+                }
             }
         };
         
