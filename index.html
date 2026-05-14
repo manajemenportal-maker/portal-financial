@@ -413,6 +413,9 @@
                 <div class="bg-white rounded-[40px] card-shadow border border-slate-100 overflow-hidden text-left">
                     <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50">
                         <h3 class="font-black italic uppercase tracking-tight text-emerald-900"><i class="fas fa-users mr-2 text-emerald-600"></i> Master Pengguna</h3>
+                        <button onclick="window.uiModal('modal-user', true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-md">
+                            <i class="fas fa-plus-circle mr-1"></i> Tambah Pengguna
+                        </button>
                     </div>
                     <div class="overflow-x-auto p-4">
                         <table class="w-full text-left border-collapse">
@@ -489,6 +492,41 @@
                     <input type="text" id="ac-mac" class="w-full bg-slate-950 border-slate-700 text-cyan-300 font-mono uppercase focus:border-cyan-500" placeholder="ESP32-XXXX">
                 </div>
                 <button onclick="window.saveAC()" class="w-full bg-cyan-600 text-white py-4 rounded-xl font-bold mt-4 hover:bg-cyan-500 transition-colors shadow-lg">Simpan Hardware Baru</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah User (Admin) -->
+    <div id="modal-user" class="modal-overlay text-left">
+        <div class="modal-container bg-slate-50">
+            <div class="p-6 border-b border-slate-200 bg-white flex justify-between items-center">
+                <h3 class="font-black italic uppercase tracking-tight text-emerald-900">Registrasi Pengguna Baru</h3>
+                <button onclick="window.uiModal('modal-user', false)" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-500 uppercase px-2">Nama Lengkap / Perusahaan</label>
+                    <input type="text" id="admin-reg-name" placeholder="Nama Lengkap" class="w-full bg-white">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-500 uppercase px-2">Username / Email Login</label>
+                    <input type="text" id="admin-reg-username" placeholder="Satu kata tanpa spasi" class="w-full bg-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-500 uppercase px-2">Kata Sandi</label>
+                        <input type="text" id="admin-reg-password" placeholder="Min. 6 Karakter" class="w-full bg-white">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-500 uppercase px-2">Peran Akses</label>
+                        <select id="admin-reg-role" class="w-full bg-white">
+                            <option value="customer">Customer</option>
+                            <option value="investor">Investor</option>
+                            <option value="sales">Sales/Mitra</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="window.saveUserAdmin()" class="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold mt-4 hover:bg-emerald-700 transition-colors shadow-lg">Simpan Pengguna</button>
             </div>
         </div>
     </div>
@@ -898,6 +936,21 @@
             });
             window.uiModal('modal-ac', false);
             refreshUI();
+        };
+
+        window.saveUserAdmin = () => {
+            const name = document.getElementById('admin-reg-name').value.trim();
+            const username = document.getElementById('admin-reg-username').value.trim();
+            const pass = document.getElementById('admin-reg-password').value.trim();
+            const role = document.getElementById('admin-reg-role').value;
+            
+            if(!name || !username || !pass) return window.showAlert("Harap isi semua kolom pendaftaran!");
+            if(window.dbUsers.find(u => u.username === username)) return window.showAlert("Username sudah terdaftar di sistem!");
+
+            window.dbUsers.push({ name, username, pass, role });
+            window.uiModal('modal-user', false);
+            window.showAlert("Pengguna baru berhasil ditambahkan!");
+            window.renderUserTable();
         };
 
         window.renderChatContacts = () => {
