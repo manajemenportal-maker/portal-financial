@@ -243,21 +243,26 @@
                 <!-- VIEW 1: DASHBOARD FINANSIAL -->
                 <div id="view-dashboard" class="space-y-8 hidden-el">
                     <!-- Kartu Ringkasan Uang -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100 flex flex-col justify-center relative overflow-hidden">
                             <div class="absolute right-0 top-0 w-24 h-24 bg-slate-50 rounded-bl-full -mr-4 -mt-4"></div>
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Total Tagihan (Gross Value)</span>
-                            <span class="text-4xl font-black text-slate-800 mono truncate relative z-10 transition-all duration-300" id="dash-val-gross">Rp 0</span>
+                            <span class="text-3xl font-black text-slate-800 mono truncate relative z-10 transition-all duration-300" id="dash-val-gross">Rp 0</span>
                         </div>
                         <div class="bg-indigo-50 p-8 rounded-[2rem] card-shadow border border-indigo-100 flex flex-col justify-center relative overflow-hidden">
                             <div class="absolute right-0 top-0 w-24 h-24 bg-indigo-100 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 relative z-10">Porsi Customer (Hak Penghematan)</span>
-                            <span class="text-4xl font-black text-indigo-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-cust">Rp 0</span>
+                            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 relative z-10">Porsi Customer (Penghematan)</span>
+                            <span class="text-3xl font-black text-indigo-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-cust">Rp 0</span>
+                        </div>
+                        <div class="bg-amber-50 p-8 rounded-[2rem] card-shadow border border-amber-100 flex flex-col justify-center relative overflow-hidden">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-amber-100 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
+                            <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2 relative z-10">Fee Investor (60%)</span>
+                            <span class="text-3xl font-black text-amber-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-inv">Rp 0</span>
                         </div>
                         <div class="bg-emerald-950 p-8 rounded-[2rem] shadow-xl flex flex-col justify-center text-white relative overflow-hidden border border-emerald-800">
                             <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full -mr-8 -mt-8"></div>
-                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 relative z-10">Laba Perusahaan (KSA Fee)</span>
-                            <span class="text-5xl font-black text-white mono truncate relative z-10 transition-all duration-300" id="dash-val-ksa">Rp 0</span>
+                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 relative z-10">Laba KSA Semesta (40%)</span>
+                            <span class="text-3xl font-black text-white mono truncate relative z-10 transition-all duration-300" id="dash-val-ksa">Rp 0</span>
                         </div>
                     </div>
 
@@ -276,7 +281,8 @@
                                         <th class="py-4 px-6">Nama Proyek / Gedung</th>
                                         <th class="py-4 px-6 text-right text-cyan-600 bg-cyan-50/50">Meter Aktual (kWh)</th>
                                         <th class="py-4 px-6 text-right">Tagihan Total (Rp)</th>
-                                        <th class="py-4 px-6 text-right text-emerald-600 bg-emerald-50/50">Fee KSA Semesta</th>
+                                        <th class="py-4 px-6 text-right text-amber-600 bg-amber-50/50">Fee Investor (60%)</th>
+                                        <th class="py-4 px-6 text-right text-emerald-600 bg-emerald-50/50">Laba KSA (40%)</th>
                                         <th class="py-4 px-6 text-center">Tindakan</th>
                                     </tr>
                                 </thead>
@@ -1060,15 +1066,17 @@
             let globalGross = 0;
             let globalCust = 0;
             let globalKsa = 0;
+            let globalInv = 0;
 
             const tbody = document.getElementById('table-dash-body');
             tbody.innerHTML = '';
 
             if (myProjs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada kontrak finansial berjalan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada kontrak finansial berjalan.</td></tr>`;
                 document.getElementById('dash-val-gross').innerText = 'Rp 0';
                 document.getElementById('dash-val-cust').innerText = 'Rp 0';
                 document.getElementById('dash-val-ksa').innerText = 'Rp 0';
+                document.getElementById('dash-val-inv').innerText = 'Rp 0';
                 return;
             }
 
@@ -1088,13 +1096,16 @@
                 const tagihanTotal = grossSaving * 0.7; 
                 const porsiCustomer = grossSaving * 0.3; 
                 
-                // Dari total uang yang masuk (tagihan 70% tsb), KSA Semesta sebagai pengelola mengambil Fee 30%.
-                const porsiKSA = tagihanTotal * 0.3; 
+                // ATURAN BARU (60/40 Split):
+                // Dari Tagihan Total, Investor mendapat 60%, Perusahaan (KSA) mendapat 40%.
+                const porsiInvestor = tagihanTotal * 0.6;
+                const porsiKSA = tagihanTotal * 0.4; 
 
                 // Akumulasikan ke kantong global untuk ditampilkan di atas layar
                 globalGross += tagihanTotal;
                 globalCust += porsiCustomer;
                 globalKsa += porsiKSA;
+                globalInv += porsiInvestor;
 
                 // Logika Tombol Cetak Invoice (Hanya Admin yang berhak mencetak dan mengirim invoice resmi)
                 let printBtn = window.activeUser.role === 'admin' ? `<button onclick="window.generateAndPrintInvoice('${p.id}', ${tagihanTotal})" class="text-[9px] bg-slate-800 text-white px-4 py-2 rounded-lg uppercase font-bold hover:bg-slate-900 transition-all shadow-md flex items-center gap-1 w-full justify-center"><i class="fas fa-file-pdf text-red-400"></i> Cetak Tagihan PDF</button>` : `<span class="text-[10px] text-slate-400 italic">Read Only</span>`;
@@ -1107,6 +1118,7 @@
                         </td>
                         <td class="py-5 px-6 text-right font-mono font-black text-cyan-700 bg-cyan-50/50 text-base">${totalKwh.toLocaleString('id-ID')}</td>
                         <td class="py-5 px-6 text-right font-black text-slate-800 text-base drop-shadow-sm">Rp ${tagihanTotal.toLocaleString('id-ID')}</td>
+                        <td class="py-5 px-6 text-right font-black text-amber-600 bg-amber-50/50 text-base drop-shadow-sm">Rp ${porsiInvestor.toLocaleString('id-ID')}</td>
                         <td class="py-5 px-6 text-right font-black text-emerald-600 bg-emerald-50/50 text-base drop-shadow-sm">Rp ${porsiKSA.toLocaleString('id-ID')}</td>
                         <td class="py-5 px-6 text-center align-middle">${printBtn}</td>
                     </tr>
@@ -1117,6 +1129,8 @@
             document.getElementById('dash-val-gross').innerText = 'Rp ' + globalGross.toLocaleString('id-ID');
             document.getElementById('dash-val-cust').innerText = 'Rp ' + globalCust.toLocaleString('id-ID');
             document.getElementById('dash-val-ksa').innerText = 'Rp ' + globalKsa.toLocaleString('id-ID');
+            const invEl = document.getElementById('dash-val-inv');
+            if(invEl) invEl.innerText = 'Rp ' + globalInv.toLocaleString('id-ID');
         };
 
         // FUNGSI PENCETAKAN INVOICE KHUSUS
