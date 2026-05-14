@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KSA Semesta Enterprise | Smart Energy & Finance</title>
+    <title>KSA Enterprise | Smart Energy & Finance</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -246,22 +246,22 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100 flex flex-col justify-center relative overflow-hidden">
                             <div class="absolute right-0 top-0 w-24 h-24 bg-slate-50 rounded-bl-full -mr-4 -mt-4"></div>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Total Tagihan (Gross Value)</span>
-                            <span class="text-3xl font-black text-slate-800 mono truncate relative z-10 transition-all duration-300" id="dash-val-gross">Rp 0</span>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Total Penghematan Murni</span>
+                            <span class="text-3xl font-black text-slate-800 mono truncate relative z-10 transition-all duration-300" id="dash-val-saving">Rp 0</span>
                         </div>
                         <div class="bg-indigo-50 p-8 rounded-[2rem] card-shadow border border-indigo-100 flex flex-col justify-center relative overflow-hidden">
                             <div class="absolute right-0 top-0 w-24 h-24 bg-indigo-100 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 relative z-10">Porsi Customer (Penghematan)</span>
-                            <span class="text-3xl font-black text-indigo-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-cust">Rp 0</span>
+                            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 relative z-10">Total Tagihan KSA (70%)</span>
+                            <span class="text-3xl font-black text-indigo-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-gross">Rp 0</span>
                         </div>
                         <div class="bg-amber-50 p-8 rounded-[2rem] card-shadow border border-amber-100 flex flex-col justify-center relative overflow-hidden">
                             <div class="absolute right-0 top-0 w-24 h-24 bg-amber-100 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                            <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2 relative z-10">Fee Investor (60%)</span>
+                            <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2 relative z-10">Fee Investor (60% dr Tagihan)</span>
                             <span class="text-3xl font-black text-amber-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-inv">Rp 0</span>
                         </div>
                         <div class="bg-emerald-950 p-8 rounded-[2rem] shadow-xl flex flex-col justify-center text-white relative overflow-hidden border border-emerald-800">
                             <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full -mr-8 -mt-8"></div>
-                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 relative z-10">Laba KSA Semesta (40%)</span>
+                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 relative z-10">Laba KSA (40%)</span>
                             <span class="text-3xl font-black text-white mono truncate relative z-10 transition-all duration-300" id="dash-val-ksa">Rp 0</span>
                         </div>
                     </div>
@@ -269,7 +269,7 @@
                     <!-- Tabel Breakdown Proyek Finansial -->
                     <div class="bg-white rounded-[2.5rem] card-shadow border border-slate-100 overflow-hidden">
                         <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 class="font-black italic uppercase text-slate-900 text-lg"><i class="fas fa-file-invoice-dollar mr-2 text-indigo-600"></i> Rincian Proyek & Tagihan</h3>
+                            <h3 class="font-black italic uppercase text-slate-900 text-lg"><i class="fas fa-file-invoice-dollar mr-2 text-indigo-600"></i> Rincian Penghematan & Bagi Hasil</h3>
                             <button onclick="window.printInvoice()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2">
                                 <i class="fas fa-print"></i> Cetak Laporan
                             </button>
@@ -279,11 +279,13 @@
                                 <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-200">
                                     <tr>
                                         <th class="py-4 px-6">Nama Proyek / Gedung</th>
-                                        <th class="py-4 px-6 text-right text-cyan-600 bg-cyan-50/50">Meter Aktual (kWh)</th>
-                                        <th class="py-4 px-6 text-right">Tagihan Total (Rp)</th>
-                                        <th class="py-4 px-6 text-right text-amber-600 bg-amber-50/50">Fee Investor (60%)</th>
-                                        <th class="py-4 px-6 text-right text-emerald-600 bg-emerald-50/50">Laba KSA (40%)</th>
-                                        <th class="py-4 px-6 text-center">Tindakan</th>
+                                        <th class="py-4 px-6 text-right">Standard (Tanpa Xtron)</th>
+                                        <th class="py-4 px-6 text-right text-cyan-600 bg-cyan-50/50">Aktual IoT (kWh)</th>
+                                        <th class="py-4 px-6 text-right text-emerald-600 bg-emerald-50/50">Penghematan (Rp)</th>
+                                        <th class="py-4 px-6 text-right">Customer (30%)</th>
+                                        <th class="py-4 px-6 text-right text-indigo-600 bg-indigo-50/50">Tagihan KSA (70%)</th>
+                                        <th class="py-4 px-6 text-right text-amber-600">Investor (60%)</th>
+                                        <th class="py-4 px-6 text-right text-emerald-800">Laba KSA (40%)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-dash-body" class="divide-y divide-slate-100">
@@ -589,7 +591,7 @@
             if(user) {
                 // Keamanan Level 1: Cegat Investor yang belum diverifikasi oleh Admin
                 if (user.role === 'investor' && !user.verified) {
-                    return window.showAlert(`LOGIN DITOLAK!\n\nAkun Anda (Paket TIER ${user.tier}) saat ini sedang dalam proses verifikasi antrean oleh Admin KSA Semesta. Silakan selesaikan administrasi investasi Anda terlebih dahulu.`);
+                    return window.showAlert(`LOGIN DITOLAK!\n\nAkun Anda (Paket TIER ${user.tier}) saat ini sedang dalam proses verifikasi antrean oleh Admin KSA. Silakan selesaikan administrasi investasi Anda terlebih dahulu.`);
                 }
 
                 // Jika lolos, set user aktif
@@ -634,7 +636,7 @@
             window.dbUsers.push({ name, username, pass, role, tier: role === 'investor' ? tier : null, verified: isVerified });
             
             if (!isVerified) {
-                window.showAlert(`Pendaftaran Investor BERHASIL!\n\nAnda memilih komitmen pendanaan Paket TIER ${tier}. Akun Anda saat ini dikunci. Silakan hubungi Admin PT. KSA Semesta untuk memverifikasi akun Anda agar bisa masuk ke dashboard.`);
+                window.showAlert(`Pendaftaran Investor BERHASIL!\n\nAnda memilih komitmen pendanaan Paket TIER ${tier}. Akun Anda saat ini dikunci. Silakan hubungi Admin PT. KSA untuk memverifikasi akun Anda agar bisa masuk ke dashboard.`);
             } else {
                 window.showAlert("Pendaftaran berhasil! Silakan login menggunakan kredensial Anda.");
             }
@@ -1063,6 +1065,7 @@
             }
 
             // Variabel Kantong Uang (Akumulator)
+            let globalSaving = 0;
             let globalGross = 0;
             let globalCust = 0;
             let globalKsa = 0;
@@ -1072,11 +1075,12 @@
             tbody.innerHTML = '';
 
             if (myProjs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada kontrak finansial berjalan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada kontrak finansial berjalan.</td></tr>`;
+                document.getElementById('dash-val-saving').innerText = 'Rp 0';
                 document.getElementById('dash-val-gross').innerText = 'Rp 0';
-                document.getElementById('dash-val-cust').innerText = 'Rp 0';
                 document.getElementById('dash-val-ksa').innerText = 'Rp 0';
-                document.getElementById('dash-val-inv').innerText = 'Rp 0';
+                const invEl = document.getElementById('dash-val-inv');
+                if(invEl) invEl.innerText = 'Rp 0';
                 return;
             }
 
@@ -1085,49 +1089,58 @@
                 const devs = window.dbDevices.filter(d => d.projectId === p.id);
                 const totalKwh = devs.reduce((sum, d) => sum + d.kwh, 0);
                 
-                // --- INTI KALKULATOR BISNIS KSA SEMESTA ---
+                // --- INTI KALKULATOR BISNIS KSA ---
+                // 1. Tentukan Nilai Standard Kapasitas AC (Tanpa Xtron)
                 const biayaNormal = p.baseline * TARIF_PLN;
+                
+                // 2. Pemakaian Aktual IOT
                 const biayaAktual = totalKwh * TARIF_PLN;
-                // Penghematan murni. Jika minus (boros), set jadi 0.
+                
+                // 3. Nilai Penghematan (Standard - Aktual)
                 const grossSaving = Math.max(0, biayaNormal - biayaAktual); 
                 
-                // SKEMA PEMBAGIAN UANG:
-                // Dari total penghematan: 70% dibayarkan (ditagihkan) oleh Customer ke KSA. (Customer mengantongi 30% penghematan secara cuma-cuma).
-                const tagihanTotal = grossSaving * 0.7; 
-                const porsiCustomer = grossSaving * 0.3; 
+                // 4. Pembagian Penghematan (Customer vs KSA)
+                const porsiCustomer = grossSaving * 0.3; // Customer mengantongi 30% dari penghematan
+                const tagihanTotal = grossSaving * 0.7; // KSA menagihkan 70% dari penghematan
                 
-                // ATURAN BARU (60/40 Split):
-                // Dari Tagihan Total, Investor mendapat 60%, Perusahaan (KSA) mendapat 40%.
+                // 5. Pembagian Hasil Tagihan KSA (Investor 60% vs Perusahaan 40%)
                 const porsiInvestor = tagihanTotal * 0.6;
                 const porsiKSA = tagihanTotal * 0.4; 
 
-                // Akumulasikan ke kantong global untuk ditampilkan di atas layar
+                // Akumulasikan ke kantong global untuk ditampilkan di panel atas
+                globalSaving += grossSaving;
                 globalGross += tagihanTotal;
                 globalCust += porsiCustomer;
                 globalKsa += porsiKSA;
                 globalInv += porsiInvestor;
 
-                // Logika Tombol Cetak Invoice (Hanya Admin yang berhak mencetak dan mengirim invoice resmi)
-                let printBtn = window.activeUser.role === 'admin' ? `<button onclick="window.generateAndPrintInvoice('${p.id}', ${tagihanTotal})" class="text-[9px] bg-slate-800 text-white px-4 py-2 rounded-lg uppercase font-bold hover:bg-slate-900 transition-all shadow-md flex items-center gap-1 w-full justify-center"><i class="fas fa-file-pdf text-red-400"></i> Cetak Tagihan PDF</button>` : `<span class="text-[10px] text-slate-400 italic">Read Only</span>`;
-
                 tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                        <td class="py-5 px-6 font-black text-indigo-950 uppercase text-sm leading-tight">
+                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors text-xs">
+                        <td class="py-4 px-6 font-black text-indigo-950 uppercase leading-tight">
                             ${p.location}
                             <span class="block text-[9px] text-slate-400 mt-1 font-mono tracking-widest">ID: ${p.id}</span>
                         </td>
-                        <td class="py-5 px-6 text-right font-mono font-black text-cyan-700 bg-cyan-50/50 text-base">${totalKwh.toLocaleString('id-ID')}</td>
-                        <td class="py-5 px-6 text-right font-black text-slate-800 text-base drop-shadow-sm">Rp ${tagihanTotal.toLocaleString('id-ID')}</td>
-                        <td class="py-5 px-6 text-right font-black text-amber-600 bg-amber-50/50 text-base drop-shadow-sm">Rp ${porsiInvestor.toLocaleString('id-ID')}</td>
-                        <td class="py-5 px-6 text-right font-black text-emerald-600 bg-emerald-50/50 text-base drop-shadow-sm">Rp ${porsiKSA.toLocaleString('id-ID')}</td>
-                        <td class="py-5 px-6 text-center align-middle">${printBtn}</td>
+                        <td class="py-4 px-6 text-right font-bold text-slate-500">
+                            <span class="mono">${(p.baseline).toLocaleString('id-ID')} kWh</span><br>
+                            <span class="text-[9px]">Rp ${(biayaNormal).toLocaleString('id-ID')}</span>
+                        </td>
+                        <td class="py-4 px-6 text-right font-black text-cyan-700 bg-cyan-50/50">
+                            <span class="mono">${totalKwh.toLocaleString('id-ID')} kWh</span><br>
+                            <span class="text-[9px]">Rp ${(biayaAktual).toLocaleString('id-ID')}</span>
+                        </td>
+                        <td class="py-4 px-6 text-right font-black text-emerald-600 bg-emerald-50/50 text-sm drop-shadow-sm">Rp ${grossSaving.toLocaleString('id-ID')}</td>
+                        <td class="py-4 px-6 text-right font-bold text-slate-600 text-sm">Rp ${porsiCustomer.toLocaleString('id-ID')}</td>
+                        <td class="py-4 px-6 text-right font-black text-indigo-700 bg-indigo-50/50 text-sm drop-shadow-sm">Rp ${tagihanTotal.toLocaleString('id-ID')}</td>
+                        <td class="py-4 px-6 text-right font-black text-amber-600 text-sm drop-shadow-sm">Rp ${porsiInvestor.toLocaleString('id-ID')}</td>
+                        <td class="py-4 px-6 text-right font-black text-emerald-800 text-sm drop-shadow-sm">Rp ${porsiKSA.toLocaleString('id-ID')}</td>
                     </tr>
                 `);
             });
 
             // Update Angka di Panel Raksasa Atas secara Live
+            const elSaving = document.getElementById('dash-val-saving');
+            if(elSaving) elSaving.innerText = 'Rp ' + globalSaving.toLocaleString('id-ID');
             document.getElementById('dash-val-gross').innerText = 'Rp ' + globalGross.toLocaleString('id-ID');
-            document.getElementById('dash-val-cust').innerText = 'Rp ' + globalCust.toLocaleString('id-ID');
             document.getElementById('dash-val-ksa').innerText = 'Rp ' + globalKsa.toLocaleString('id-ID');
             const invEl = document.getElementById('dash-val-inv');
             if(invEl) invEl.innerText = 'Rp ' + globalInv.toLocaleString('id-ID');
@@ -1144,7 +1157,7 @@
                 <div class="max-w-4xl mx-auto border-4 border-slate-900 p-12 relative bg-white">
                     <div class="border-b-4 border-indigo-950 pb-6 mb-8 flex justify-between items-end">
                         <div>
-                            <h1 class="text-5xl font-black italic uppercase tracking-tighter text-indigo-950 leading-none">KSA SEMESTA</h1>
+                            <h1 class="text-5xl font-black italic uppercase tracking-tighter text-indigo-950 leading-none">KSA</h1>
                             <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.2em] mt-3">Smart Energy Financing</p>
                         </div>
                         <div class="text-right">
@@ -1177,7 +1190,7 @@
 
                     <div class="border-t-4 border-slate-200 pt-8 mt-16 text-center">
                         <p class="text-2xl font-black text-slate-800 uppercase italic">TERIMA KASIH ATAS KERJASAMA ANDA</p>
-                        <p class="text-sm font-bold text-slate-500 mt-2">Tagihan ini dicetak sah oleh Sistem Komputerisasi KSA Semesta Enterprise.</p>
+                        <p class="text-sm font-bold text-slate-500 mt-2">Tagihan ini dicetak sah oleh Sistem Komputerisasi KSA Enterprise.</p>
                     </div>
                 </div>
             `;
