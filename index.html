@@ -193,7 +193,7 @@
                         <button onclick="window.switchView('users')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all">
                             <i class="fas fa-users w-5"></i> Master Pengguna
                         </button>
-                        <button onclick="window.uiModal('modal-project', true)" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all text-amber-300">
+                        <button onclick="window.openProjectModal()" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all text-amber-300">
                             <i class="fas fa-plus-circle w-5"></i> Buat Kontrak Baru
                         </button>
                     </div>
@@ -466,6 +466,17 @@
                         <input type="number" id="proj-capex" placeholder="Misal: 25000000" class="w-full bg-white">
                     </div>
                 </div>
+
+                <div class="pt-4 border-t border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-[10px] font-black text-slate-500 uppercase px-2">Daftar Unit AC & Kapasitas</label>
+                        <button onclick="window.addProjectACRow()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"><i class="fas fa-plus"></i> Tambah Baris AC</button>
+                    </div>
+                    <div id="proj-ac-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+                        <!-- Baris AC disuntik via JS -->
+                    </div>
+                </div>
+
                 <button onclick="window.saveProject()" class="w-full bg-indigo-900 text-white py-4 rounded-xl font-bold mt-4 hover:bg-black transition-colors shadow-lg">Simpan Proyek</button>
             </div>
         </div>
@@ -905,6 +916,39 @@
             });
         };
 
+        window.openProjectModal = () => {
+            document.getElementById('proj-cust').value = '';
+            document.getElementById('proj-inv').value = '';
+            document.getElementById('proj-loc').value = '';
+            document.getElementById('proj-base').value = '';
+            document.getElementById('proj-capex').value = '';
+            document.getElementById('proj-ac-list').innerHTML = '';
+            window.addProjectACRow(); // Tambahkan 1 baris default
+            window.uiModal('modal-project', true);
+        };
+
+        window.addProjectACRow = () => {
+            const list = document.getElementById('proj-ac-list');
+            const rowId = 'ac-row-' + Date.now() + Math.floor(Math.random() * 1000);
+            list.insertAdjacentHTML('beforeend', `
+                <div id="${rowId}" class="flex items-center gap-2 bg-slate-100 p-2 rounded-xl border border-slate-200">
+                    <input type="text" class="ac-merk w-full bg-white p-2 rounded-lg text-xs outline-none font-bold" placeholder="Merk/Tipe (Misal: Daikin)">
+                    <select class="ac-pk bg-white p-2 rounded-lg text-xs outline-none w-24 shrink-0 font-bold">
+                        <option value="0.5">0.5 PK</option>
+                        <option value="1" selected>1 PK</option>
+                        <option value="1.5">1.5 PK</option>
+                        <option value="2">2 PK</option>
+                        <option value="2.5">2.5 PK</option>
+                        <option value="3">3 PK</option>
+                        <option value="4">4 PK</option>
+                        <option value="5">5 PK</option>
+                    </select>
+                    <input type="text" class="ac-mac bg-white p-2 rounded-lg text-xs outline-none w-32 shrink-0 font-mono uppercase font-bold" placeholder="MAC Address">
+                    <button onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Hapus AC"><i class="fas fa-trash"></i></button>
+                </div>
+            `);
+        };
+
         // Modal Logic for Admin Additions
         window.saveProject = () => {
             const cust = document.getElementById('proj-cust').value;
@@ -917,8 +961,31 @@
             
             const pId = 'PRJ-' + Date.now();
             window.dbProjects.push({ id: pId, custEmail: cust, invEmail: inv, location: loc, baseline: base, capex: capex, createdAt: new Date().toISOString() });
+            
+            // Daftarkan Node AC dari list form
+            const acRows = document.querySelectorAll('#proj-ac-list > div');
+            acRows.forEach((row, idx) => {
+                const merk = row.querySelector('.ac-merk').value.trim() || `AC Unit ${idx+1}`;
+                const pk = row.querySelector('.ac-pk').value;
+                let mac = row.querySelector('.ac-mac').value.trim().toUpperCase().replace(/\s/g, '-');
+                
+                // Jika MAC tidak diisi, berikan ID sementara agar tetap bisa terdaftar
+                if(!mac) mac = `ESP32-PENDING-${Date.now().toString().slice(-4)}-${idx}`;
+                
+                window.dbDevices.push({
+                    id: mac, 
+                    projectId: pId, 
+                    name: `${merk} (${pk}PK)`, 
+                    location: loc, // Menggunakan nama gedung sebagai fallback lokasi ruangan
+                    baseData: 0, 
+                    power: true, 
+                    temp: 24, 
+                    status: 'online'
+                });
+            });
+
             window.uiModal('modal-project', false);
-            window.showAlert("Proyek berhasil dibuat!");
+            window.showAlert("Proyek dan " + acRows.length + " unit AC berhasil didaftarkan ke sistem!");
             window.renderProjectTable();
             populateProjectSelector();
         };
