@@ -117,6 +117,7 @@
                         <option value="customer">Customer (Pemilik Gedung)</option>
                         <option value="investor">Investor (Pendana Proyek)</option>
                         <option value="sales">Sales / Mitra Rekanan</option>
+                        <option value="teknisi">Teknisi (Pemasangan & Maintenance)</option>
                     </select>
                 </div>
                 <!-- Investor Tier Selection -->
@@ -447,10 +448,24 @@
                 </div>
 
                 <!-- 6. TEKNISI PLACEHOLDER -->
-                <div id="view-teknisi" class="hidden-el bg-slate-800 rounded-3xl p-8 border border-slate-700 text-center">
-                    <i class="fas fa-tools text-6xl text-slate-600 mb-4 block"></i>
-                    <h3 class="text-white font-bold mb-2">Manajemen Teknisi Pemasangan</h3>
-                    <p class="text-slate-400 text-sm">Data teknisi telah tersinkronisasi dan dikelola melalui tabel Master Database Pengguna.</p>
+                <div id="view-teknisi" class="hidden-el space-y-8">
+                    <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden">
+                        <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-orange-900/20">
+                            <h2 class="text-lg font-bold text-orange-400 uppercase tracking-widest"><i class="fas fa-tools mr-2"></i>Database Teknisi</h2>
+                        </div>
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-700">
+                                    <tr>
+                                        <th class="py-4 px-4 font-bold">Identitas Teknisi</th>
+                                        <th class="py-4 px-4 font-bold">Status Akun</th>
+                                        <th class="py-4 px-4 font-bold text-center">Aksi Verifikasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teknisi-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -773,7 +788,7 @@
             if(view === 'chat') { title = 'Pusat Pesan'; renderChatContacts(); }
             if(view === 'users') { title = 'Master Pengguna'; renderUsers(); }
             if(view === 'projects') { title = 'Master Kontrak'; renderProjects(); }
-            if(view === 'teknisi') { title = 'Master Teknisi'; }
+            if(view === 'teknisi') { title = 'Master Teknisi'; renderUsers(); }
             
             document.getElementById('topbar-title').innerText = title;
         };
@@ -783,14 +798,16 @@
             const tbCust = document.getElementById('customers-tbody');
             const tbInv = document.getElementById('investors-tbody');
             const tbSales = document.getElementById('sales-tbody');
+            const tbTeknisi = document.getElementById('teknisi-tbody');
             
             if(!tbCust || !tbInv || !tbSales) return;
             
             tbCust.innerHTML = '';
             tbInv.innerHTML = '';
             tbSales.innerHTML = '';
+            if(tbTeknisi) tbTeknisi.innerHTML = '';
 
-            let custCount = 0, invCount = 0, salesCount = 0;
+            let custCount = 0, invCount = 0, salesCount = 0, tekCount = 0;
 
             dbUsers.forEach(u => {
                 if(u.role === 'admin') return; // Sembunyikan admin utama dari tabel
@@ -842,6 +859,18 @@
                         </tr>
                     `);
                     salesCount++;
+                } else if (u.role === 'teknisi' && tbTeknisi) {
+                    tbTeknisi.insertAdjacentHTML('beforeend', `
+                        <tr class="hover:bg-slate-700/30 border-b border-slate-700/50">
+                            <td class="py-3 px-4">
+                                <p class="font-bold text-white uppercase">${u.name}</p>
+                                <p class="text-[10px] text-slate-400">${u.username}</p>
+                            </td>
+                            <td class="py-3 px-4">${statBadge}</td>
+                            <td class="py-3 px-4 w-32">${btn}</td>
+                        </tr>
+                    `);
+                    tekCount++;
                 }
             });
 
@@ -850,6 +879,7 @@
             if(custCount === 0) tbCust.innerHTML = emptyMsg(3);
             if(invCount === 0) tbInv.innerHTML = emptyMsg(4);
             if(salesCount === 0) tbSales.innerHTML = emptyMsg(3);
+            if(tekCount === 0 && tbTeknisi) tbTeknisi.innerHTML = emptyMsg(3);
         };
 
         window.verifyUser = (id) => {
