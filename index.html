@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KSA Enterprise Portal</title>
-    <!-- Libraries Terlengkap -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -67,7 +66,7 @@
     </div>
 
     <!-- Layar Autentikasi / Login -->
-    <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-6 overflow-y-auto hidden-el">
+    <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-6 overflow-y-auto">
         <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 shadow-2xl w-full max-w-md relative overflow-hidden my-auto">
             <div class="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl"></div>
             
@@ -207,7 +206,7 @@
                 <!-- 1. DASHBOARD FINANSIAL -->
                 <div id="view-dashboard" class="hidden-el space-y-8">
                     
-                    <!-- Global Stats Panel (CAPEX) - BARU DITAMBAHKAN -->
+                    <!-- Global Stats Panel (CAPEX) -->
                     <div id="global-stats-panel" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden-el">
                         <div class="bg-indigo-900/50 p-6 rounded-3xl border border-indigo-500/30 relative overflow-hidden shadow-xl">
                             <div class="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl"></div>
@@ -216,7 +215,7 @@
                         </div>
                     </div>
 
-                    <!-- Project Selector (Untuk Admin/Customer yang punya banyak proyek) -->
+                    <!-- Project Selector -->
                     <div id="project-selector-box" class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
                         <div>
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data View</p>
@@ -244,12 +243,12 @@
                             <button id="btn-print-invoice" onclick="printInvoice()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hidden-el"><i class="fas fa-print mr-2"></i> Cetak Invoice KSA</button>
                         </div>
 
-                        <!-- 4 Kartu Metrik Utama Finansial KSA -->
+                        <!-- 4 Kartu Metrik Utama Finansial KSA (Final Logic) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                             <!-- 1. Saving (Baseline - Aktual) -->
                             <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 relative overflow-hidden shadow-xl">
                                 <div class="absolute -right-6 -top-6 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl"></div>
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><i class="fas fa-leaf text-cyan-400 mr-1"></i> Total Penghematan Murni</p>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><i class="fas fa-leaf text-cyan-400 mr-1"></i> Penghematan Murni (Saving)</p>
                                 <h4 id="dash-saving" class="text-3xl font-black text-white mono truncate">Rp 0</h4>
                                 <p class="text-xs text-slate-500 mt-2 font-medium">Baseline Normal - Aktual IoT</p>
                             </div>
@@ -259,7 +258,7 @@
                                 <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
                                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><i class="fas fa-file-invoice-dollar text-blue-400 mr-1"></i> Tagihan KSA (70%)</p>
                                 <h4 id="dash-tagihan" class="text-3xl font-black text-blue-400 mono truncate">Rp 0</h4>
-                                <p class="text-xs text-slate-500 mt-2 font-medium">Ditagihkan ke Customer (Sisa 30% Hak Cust)</p>
+                                <p class="text-xs text-slate-500 mt-2 font-medium">Sisa 30% Hak Customer</p>
                             </div>
                             
                             <!-- 3. Fee Investor (60% dari Tagihan KSA) -->
@@ -288,7 +287,7 @@
                                     <p id="dash-base-kwh" class="text-2xl font-black text-slate-800 mono">0 kWh</p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest mb-1">Konsumsi Berjalan (Aktual)</p>
+                                    <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest mb-1">Konsumsi Berjalan (Aktual IoT)</p>
                                     <p id="dash-actual-kwh" class="text-3xl font-black text-cyan-600 mono">0 kWh</p>
                                 </div>
                                 <div class="hidden md:block flex-1 bg-slate-100 rounded-full h-4 overflow-hidden relative">
@@ -297,7 +296,7 @@
                             </div>
                         </div>
                         
-                        <!-- Panel Khusus Ringkasan Ekstra untuk Role Tertentu -->
+                        <!-- Panel Khusus Ringkasan Ekstra -->
                         <div id="panel-khusus-role" class="hidden-el bg-slate-800 rounded-3xl p-8 border border-slate-700"></div>
                     </div>
                 </div>
@@ -417,7 +416,7 @@
         </main>
     </div>
 
-    <!-- MODAL: TAMBAH PROYEK -->
+    <!-- MODAL: TAMBAH PROYEK (Lengkap dengan Opsi AC 0.5 s/d 20 PK) -->
     <div id="modal-project" class="modal-overlay">
         <div class="modal-container bg-slate-800 border-slate-700 text-white max-w-4xl max-h-[85vh]">
             <div class="p-6 border-b border-slate-700 flex justify-between items-center">
@@ -428,11 +427,11 @@
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Customer Pemilik</label>
-                        <select id="proj-cust" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none"></select>
+                        <select id="proj-cust" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none cursor-pointer"></select>
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Investor Pendana</label>
-                        <select id="proj-inv" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none"></select>
+                        <select id="proj-inv" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none cursor-pointer"></select>
                     </div>
                 </div>
                 <div>
@@ -473,7 +472,7 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kapasitas (PK)</label>
-                    <select id="ac-pk" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none">
+                    <select id="ac-pk" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none cursor-pointer">
                         <!-- Disuntik via JS 0.5 s/d 20 PK -->
                     </select>
                 </div>
@@ -575,6 +574,7 @@
         const formatKwh = (num) => new Intl.NumberFormat('id-ID', {maximumFractionDigits:1}).format(num);
         const cleanStr = (s) => (s||'').toString().trim();
 
+        // --- STREAMING_CHUNK:Menyiapkan fungsi UI Modals dan Autentikasi ---
         // --- UI ALERT & MODAL ---
         window.showAlert = (msg) => {
             document.getElementById('alert-msg').innerText = msg;
@@ -650,6 +650,7 @@
             document.getElementById('login-password').value = pass;
         };
 
+        // --- STREAMING_CHUNK:Menyiapkan fungsi Sesi Anti-Refresh (F5) ---
         window.doLogin = () => {
             const email = cleanStr(document.getElementById('login-email').value);
             const pass = cleanStr(document.getElementById('login-password').value);
@@ -702,13 +703,14 @@
                 if(validUser && validUser.verified) {
                     document.getElementById('login-email').value = validUser.username;
                     document.getElementById('login-password').value = validUser.pass;
-                    doLogin();
+                    doLogin(); // Trigger auto-login
                 } else {
                     localStorage.removeItem('ksa_session');
                 }
             }
         };
 
+        // --- STREAMING_CHUNK:Sistem Navigasi SPA ---
         // --- SISTEM NAVIGASI (SPA) ---
         window.switchView = (view) => {
             localStorage.setItem('ksa_view', view); // ANTI-F5 Memory
@@ -782,6 +784,7 @@
             });
         };
 
+        // --- STREAMING_CHUNK:Menyiapkan fungsi Manajemen Proyek dan AC Row Dinamis ---
         // --- MODUL MASTER KONTRAK (PROYEK) ---
         function getAvailableOptions(role) {
             return dbUsers.filter(u => u.role === role && u.verified).map(u => `<option value="${u.id}">${u.name} (${u.username})</option>`).join('');
@@ -797,6 +800,7 @@
             uiModal('modal-project', true);
         };
 
+        // FITUR: ADD AC ROW LENGKAP 0.5 - 20 PK
         window.addProjectACRow = () => {
             const container = document.getElementById('ac-rows-container');
             const row = document.createElement('div');
@@ -806,7 +810,7 @@
             let pkOptions = AC_OPTIONS.map(pk => `<option value="${pk}">${pk} PK</option>`).join('');
             
             row.innerHTML = `
-                <select class="ac-pk w-1/3 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none" onchange="calcProjectBaseline()">${pkOptions}</select>
+                <select class="ac-pk w-1/3 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none cursor-pointer" onchange="calcProjectBaseline()">${pkOptions}</select>
                 <input type="number" min="1" value="1" class="ac-qty w-1/4 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none text-center" placeholder="Jml" onchange="calcProjectBaseline()" onkeyup="calcProjectBaseline()">
                 <input type="text" class="ac-mac w-1/2 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none" placeholder="MAC Address / ID IoT">
                 <button onclick="this.parentElement.remove(); calcProjectBaseline();" class="text-red-400 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
@@ -952,6 +956,7 @@
         };
 
 
+        // --- STREAMING_CHUNK:Menghitung Logika Finansial KSA (Final Formula) ---
         // --- LOGIKA FINANSIAL UTAMA (THE FINANCE ENGINE) ---
         function getTierCapex(tier) {
             const vals = { 'A': 28500000, 'B': 22250000, 'C': 15750000, 'D': 14250000 };
@@ -991,7 +996,7 @@
             let totalActualKwh = 0;
             acs.forEach(a => totalActualKwh += (a.baseData || 0));
 
-            // RUMUS BISNIS KSA (FINAL)
+            // RUMUS BISNIS KSA (FINAL 30/70 -> 60/40)
             const baselineKwh = activeProject.baseline;
             const savingKwh = Math.max(0, baselineKwh - totalActualKwh);
             const savingRp = savingKwh * TARIF_KWH;
@@ -1067,6 +1072,7 @@
         };
 
 
+        // --- STREAMING_CHUNK:Menyiapkan Panel Kontrol IoT AC Jarak Jauh ---
         // --- MODUL PUSAT KENDALI IOT ---
         window.showModalAc = () => {
             if(!activeProject) return showAlert("Pilih atau Buat Proyek terlebih dahulu sebelum menambah AC!");
@@ -1188,7 +1194,7 @@
             }
         };
 
-        // --- ENGINE SIMULATOR IOT (Jantung KSA) ---
+        // --- ENGINE SIMULATOR IOT (Jantung Data KSA) ---
         window.toggleSimulator = (isActive) => {
             if(isActive) {
                 simulatorInterval = setInterval(() => {
@@ -1214,6 +1220,7 @@
         };
 
 
+        // --- STREAMING_CHUNK:Menyiapkan Chat System dan Modul PDF Invoice ---
         // --- PUSAT PESAN (CHAT SYSTEM) ---
         window.renderChatContacts = () => {
             const list = document.getElementById('contact-list');
@@ -1250,7 +1257,6 @@
             if(!activeChatId) return;
 
             let msgs = [];
-            // Filter chat antara Admin dan User bersangkutan
             if(activeUser.role === 'admin') msgs = dbChats.filter(m => m.sender === activeChatId || m.receiver === activeChatId);
             else msgs = dbChats.filter(m => m.sender === activeUser.id || m.receiver === activeUser.id);
 
@@ -1308,7 +1314,7 @@
         };
 
         // --- STARTUP / INITIALIZER ---
-        // Jika ada cookie login, masuk. Jika tidak, tetap di auth-screen.
+        // Jalankan Session Restore saat halaman dimuat
         restoreSession();
 
     </script>
