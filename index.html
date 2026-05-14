@@ -3,1241 +3,1184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KSA Enterprise | Smart Energy & Finance</title>
-    
+    <title>KSA Enterprise Portal</title>
+    <!-- Libraries Terlengkap -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; background-color: #f8fafc; color: #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; background-color: #0f172a; color: #f1f5f9; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        .sidebar-gradient { background: linear-gradient(180deg, #020617 0%, #1e1b4b 100%); }
-        .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1); }
         .hidden-el { display: none !important; }
         
-        /* Modal Background Blur */
+        /* Efek Teks Xtron 3D Keemasan */
+        .gold-3d-text {
+            background: linear-gradient(to bottom, #fef08a 0%, #eab308 50%, #a16207 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 1px 0px #854d0e, 0px 2px 0px #713f12, 0px 3px 0px #422006, 0px 6px 10px rgba(0, 0, 0, 0.6);
+            letter-spacing: 2px;
+        }
+
         .modal-overlay { 
-            position: fixed; inset: 0; z-index: 9999; 
-            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px);
+            position: fixed; inset: 0; z-index: 100; 
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px);
             display: flex; align-items: center; justify-content: center; padding: 1.5rem;
             opacity: 0; pointer-events: none; transition: all 0.3s ease;
         }
         .modal-container { 
-            background: white; width: 100%; max-width: 48rem; border-radius: 1.5rem; 
-            transform: scale(0.95); transition: all 0.3s ease;
+            background: #1e293b; width: 100%; max-width: 64rem; border-radius: 2rem; border: 1px solid #334155;
+            transform: scale(0.95); transition: all 0.3s ease; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
         }
         .modal-active { opacity: 1; pointer-events: auto; }
         .modal-active .modal-container { transform: scale(1); }
-        
-        /* Auth Screen Styles */
-        .auth-card { background: white; border-radius: 2.5rem; width: 100%; max-width: 32rem; padding: 3rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        input, select { border: 2px solid #f1f5f9; border-radius: 1rem; padding: 1rem 1.2rem; font-weight: 600; outline: none; width: 100%; transition: all 0.2s ease; background: #fff;}
-        input:focus, select:focus { border-color: #4f46e5; background: #f8fafc; }
-        
-        /* Custom Scrollbar */
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
 
-        /* Gold 3D Text Effect */
-        .gold-3d-text {
-            background: linear-gradient(to bottom, #fef08a 0%, #eab308 50%, #a16207 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-shadow: 0px 1px 0px #854d0e, 0px 2px 0px #713f12, 0px 4px 6px rgba(0, 0, 0, 0.4);
-        }
-
-        /* Print Media Query untuk cetak Invoice */
         @media print {
-            body * { visibility: hidden; }
-            #invoice-print-area, #invoice-print-area * { visibility: visible; }
-            #invoice-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; color: black; }
+            body.invoice-mode #app-content, body.invoice-mode #auth-screen, body.invoice-mode .modal-overlay, body.invoice-mode aside, body.invoice-mode nav { display: none !important; }
+            body.invoice-mode #invoice-print-template { display: block !important; }
         }
+        #invoice-print-template { display: none; }
     </style>
 </head>
-<body class="min-h-screen text-left">
+<body class="min-h-screen flex flex-col">
 
-    <div id="custom-alert-modal" class="modal-overlay">
-        <div class="modal-container bg-white rounded-3xl mx-auto shadow-2xl transform transition-all text-center" style="max-width: 24rem; padding: 2rem; overflow: visible;">
-            <div id="alert-icon" class="text-4xl text-amber-500 mb-4"><i class="fas fa-exclamation-circle"></i></div>
-            <h3 id="alert-title" class="text-xl font-black italic uppercase text-slate-900 mb-2">Pemberitahuan</h3>
-            <p id="alert-msg" class="text-sm font-medium text-slate-600 mb-6"></p>
+    <div id="custom-alert-modal" class="modal-overlay text-left z-[9999]">
+        <div class="modal-container bg-slate-800 rounded-3xl mx-auto shadow-2xl transform transition-all text-center max-w-sm p-8">
+            <div id="alert-icon" class="text-5xl text-amber-500 mb-4"><i class="fas fa-exclamation-circle"></i></div>
+            <h3 id="alert-title" class="text-xl font-black italic uppercase text-white mb-2">Pemberitahuan</h3>
+            <p id="alert-msg" class="text-sm font-medium text-slate-400 mb-6"></p>
             <div id="alert-buttons" class="flex gap-3 justify-center w-full">
-                <button id="alert-ok-btn" onclick="window.closeAlert()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all flex-1">Mengerti</button>
+                <button id="alert-ok-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all flex-1 shadow-lg shadow-indigo-600/30">Mengerti</button>
+                <button id="alert-cancel-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-6 py-3 rounded-xl font-bold transition-all flex-1 hidden-el">Batal</button>
             </div>
         </div>
     </div>
 
-    <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-6 overflow-y-auto">
-        <div class="auth-card border border-slate-200 mt-10 mb-10 relative overflow-hidden">
-            <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-6 overflow-y-auto hidden-el">
+        <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 shadow-2xl w-full max-w-md relative overflow-hidden my-auto">
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl"></div>
             
-            <!-- Header Logo (Klik 3x untuk buka portal Admin Rahasia) -->
-            <div class="text-center mb-8 cursor-pointer relative z-10" onclick="window.triggerAdminLogin()" title="Klik logo 3x untuk buka portal rahasia Admin">
-                <div class="mb-2">
-                    <span class="text-5xl font-black italic gold-3d-text uppercase">KSA</span>
-                </div>
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em]">Super App Enterprise</p>
+            <div class="text-center mb-8 relative z-10">
+                <h1 class="text-6xl font-black italic gold-3d-text mb-2 tracking-tighter">Xtron</h1>
+                <p class="text-[11px] text-slate-400 uppercase tracking-[0.3em] font-bold mt-2">KSA Enterprise Portal</p>
             </div>
 
-            <!-- TAMPILAN LOGIN UMUM -->
-            <div id="login-view" class="relative z-10">
-                <div class="space-y-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Username / ID</label>
-                        <input type="text" id="login-email" placeholder="Customer / Investor / Sales">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block px-2">Kata Sandi</label>
-                        <input type="password" id="login-password" placeholder="••••••••" onkeypress="if(event.key === 'Enter') window.doLogin('public')">
-                    </div>
-                    <button onclick="window.doLogin('public')" class="w-full bg-indigo-950 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all mt-4 shadow-lg">Masuk Dashboard</button>
+            <!-- Login View -->
+            <div id="login-view" class="relative z-10 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Email / Username</label>
+                    <input type="text" id="login-email" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-5 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors">
                 </div>
-                <div class="text-center pt-6 border-t border-slate-100 mt-6 w-full">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Kata Sandi</label>
+                    <input type="password" id="login-password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-5 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors">
+                </div>
+                <button onclick="doLogin()" class="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-900 font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-amber-500/20 transition-all mt-4">
+                    Masuk Dashboard
+                </button>
+                <div class="text-center pt-4 border-t border-slate-700 mt-6">
                     <p class="text-xs font-bold text-slate-500">
-                        Belum punya akun? <button onclick="window.toggleAuthView('register')" class="text-indigo-600 hover:text-indigo-800 underline font-black ml-1">Daftar Sekarang</button>
+                        Belum punya akun? <button onclick="toggleAuth('register')" class="text-amber-500 hover:underline font-black ml-1">Daftar Kemitraan</button>
                     </p>
                 </div>
             </div>
 
-            <!-- TAMPILAN LOGIN ADMIN RAHASIA -->
-            <div id="admin-login-view" class="hidden-el relative z-10">
-                <div class="bg-red-50 p-4 rounded-xl mb-6 border border-red-100 text-center">
-                    <p class="text-xs font-black text-red-700 uppercase tracking-widest"><i class="fas fa-shield-alt mr-1"></i> Admin Security Portal</p>
+            <!-- Register View -->
+            <div id="register-view" class="relative z-10 hidden-el space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Nama Lengkap / Instansi</label>
+                    <input type="text" id="reg-name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors">
                 </div>
-                <div class="space-y-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">ID Master</label>
-                        <input type="text" id="admin-login-username" placeholder="Masukkan ID (Default: admin)">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Username / Email</label>
+                        <input type="text" id="reg-email" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors">
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Passcode</label>
-                        <input type="password" id="admin-login-password" placeholder="•••••••• (Default: 123)" onkeypress="if(event.key === 'Enter') window.doLogin('admin')">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Kata Sandi</label>
+                        <input type="password" id="reg-password" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors">
                     </div>
-                    <button onclick="window.doLogin('admin')" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-red-700 transition-all mt-4 shadow-lg"><i class="fas fa-lock mr-2"></i> Otorisasi Admin</button>
                 </div>
-                <div class="text-center pt-6 border-t border-slate-100 mt-6 w-full">
-                    <button onclick="window.toggleAuthView('login')" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"><i class="fas fa-arrow-left mr-1"></i> Kembali ke Publik</button>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Pilih Jenis Kemitraan</label>
+                    <select id="reg-role" onchange="checkTierSelection()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors cursor-pointer">
+                        <option value="customer">Customer (Pemilik Gedung)</option>
+                        <option value="investor">Investor (Pendana Proyek)</option>
+                        <option value="sales">Sales / Mitra Rekanan</option>
+                    </select>
                 </div>
-            </div>
+                <!-- Investor Tier -->
+                <div id="reg-tier-box" class="hidden-el p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                    <label class="block text-[10px] font-black text-amber-500 uppercase mb-2">Pilih Paket Investasi (Tier)</label>
+                    <select id="reg-tier" class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors cursor-pointer">
+                        <option value="A">TIER A - Rp 28.500.000</option>
+                        <option value="B">TIER B - Rp 22.250.000</option>
+                        <option value="C">TIER C - Rp 15.750.000</option>
+                        <option value="D">TIER D - Rp 14.250.000</option>
+                    </select>
+                </div>
 
-            <!-- TAMPILAN REGISTER -->
-            <div id="register-view" class="hidden-el relative z-10">
-                <div class="space-y-3 max-h-[60vh] overflow-y-auto px-1 pb-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Nama Lengkap / Instansi</label>
-                        <input type="text" id="reg-name" placeholder="Misal: PT Angkasa Raya">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Username Login</label>
-                        <input type="text" id="reg-username" placeholder="Tanpa spasi">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Kata Sandi</label>
-                        <input type="password" id="reg-password" placeholder="Minimal 6 karakter">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Pilih Peran</label>
-                        <select id="reg-role" onchange="window.toggleTierSelect(this.value)">
-                            <option value="customer">Customer (Pemilik Gedung)</option>
-                            <option value="investor">Investor (Pendana)</option>
-                            <option value="sales">Sales / Rekanan</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Form Paket Investor (Otomatis muncul jika role = investor) -->
-                    <div id="reg-tier-container" class="space-y-1 hidden-el mt-2 p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                        <label class="text-[10px] font-black text-amber-600 uppercase px-2 block mb-2"><i class="fas fa-award"></i> Pilih Paket Investasi (Wajib)</label>
-                        <select id="reg-tier" class="border-amber-200 focus:border-amber-500 bg-white text-amber-900 shadow-sm">
-                            <option value="A">TIER A - Rp 28.500.000</option>
-                            <option value="B">TIER B - Rp 22.250.000</option>
-                            <option value="C">TIER C - Rp 15.750.000</option>
-                            <option value="D">TIER D - Rp 14.250.000</option>
-                        </select>
-                        <p class="text-[9px] text-amber-600 mt-2 italic px-2">*Akun Anda akan ditinjau dan diaktifkan oleh Admin setelah proses verifikasi transfer selesai.</p>
-                    </div>
-
-                    <button onclick="window.doRegister()" class="w-full bg-amber-500 text-slate-900 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all mt-4 shadow-lg">Daftar Akun Baru</button>
-                </div>
-                <div class="text-center pt-6 border-t border-slate-100 mt-4 w-full">
-                    <p class="text-xs font-bold text-slate-500">
-                        Sudah punya akun? <button onclick="window.toggleAuthView('login')" class="text-indigo-600 underline font-black ml-1">Kembali Login</button>
-                    </p>
+                <button onclick="doRegister()" class="w-full bg-slate-100 text-slate-900 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-white transition-all shadow-xl mt-4">Kirim Registrasi</button>
+                <div class="text-center pt-4 border-t border-slate-700 mt-4">
+                    <button onclick="toggleAuth('login')" class="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors"><i class="fas fa-arrow-left mr-1"></i> Kembali Login</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP WORKSPACE -->
     <div id="app-content" class="hidden-el flex h-screen overflow-hidden">
         
         <!-- SIDEBAR -->
-        <aside class="w-64 sidebar-gradient text-white flex flex-col hidden md:flex shrink-0">
-            <div class="p-6 text-center">
-                <span class="text-3xl font-black italic gold-3d-text uppercase">KSA</span>
-                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mt-1">Super App Enterprise</p>
+        <aside class="w-72 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 transition-all z-20 overflow-y-auto no-print">
+            <div class="h-24 flex items-center justify-center border-b border-slate-800 shrink-0">
+                <h2 class="text-4xl font-black italic gold-3d-text tracking-tighter">Xtron</h2>
             </div>
             
-            <div class="px-6 pb-4 border-b border-white/10">
-                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-2 italic mb-1">Status Login:</p>
-                <div class="bg-white/10 px-4 py-3 rounded-xl">
-                    <p id="sb-user-name" class="font-bold text-sm truncate">-</p>
-                    <p id="sb-user-role" class="text-[10px] text-amber-400 uppercase font-black tracking-widest mt-1">-</p>
-                </div>
+            <div class="p-6 border-b border-slate-800 bg-slate-800/30">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Akses Profil</p>
+                <h3 id="sb-user-name" class="font-bold text-white uppercase text-lg leading-tight truncate">Nama User</h3>
+                <span id="sb-user-role" class="inline-block mt-2 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-500 border border-amber-500/30">Role</span>
             </div>
 
-            <nav class="flex-1 px-4 space-y-2 overflow-y-auto mt-4">
-                <!-- Menu Umum (Semua Role) -->
-                <button onclick="window.switchView('dashboard')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-sm font-bold text-left transition-all">
-                    <i class="fas fa-chart-pie w-5 text-center text-amber-400"></i> Dashboard Finansial
+            <nav class="flex-1 p-4 space-y-1">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2 mt-2">Menu Utama</p>
+                <button onclick="switchView('dashboard')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left group">
+                    <i class="fas fa-chart-line w-5 text-slate-500 group-hover:text-amber-400 transition-colors"></i> Finance Dashboard
                 </button>
-                
-                <!-- Menu Data Center IoT -->
-                <button onclick="window.switchView('iot')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-sm font-bold text-left transition-all">
-                    <i class="fas fa-satellite-dish w-5 text-center text-cyan-400"></i> Pusat Kendali IoT
+                <button onclick="switchView('iot')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left group">
+                    <i class="fas fa-microchip w-5 text-slate-500 group-hover:text-cyan-400 transition-colors"></i> Pusat Kendali IoT
+                </button>
+                <button onclick="switchView('chat')" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left group">
+                    <div class="flex items-center gap-3"><i class="fas fa-comments w-5 text-slate-500 group-hover:text-indigo-400 transition-colors"></i> Pusat Pesan</div>
                 </button>
 
-                <!-- Menu Khusus Admin (Akan di-toggle via JS) -->
-                <div id="admin-menus" class="hidden-el pt-4 border-t border-white/10 mt-4 space-y-2">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-4 italic mb-2">Administrasi Data</p>
-                    <button onclick="window.switchView('users')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-sm font-bold text-left transition-all">
-                        <i class="fas fa-users w-5 text-center text-indigo-300"></i> Master Pengguna
+                <!-- Menu Khusus Admin -->
+                <div id="admin-menus" class="hidden-el">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2 mt-6">Administrasi KSA</p>
+                    <button onclick="switchView('projects')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left group">
+                        <i class="fas fa-project-diagram w-5 text-slate-500 group-hover:text-blue-400 transition-colors"></i> Master Kontrak
                     </button>
-                    <button onclick="window.switchView('projects')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-sm font-bold text-left transition-all">
-                        <i class="fas fa-file-contract w-5 text-center text-indigo-300"></i> Master Kontrak
+                    <button onclick="switchView('users')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left group">
+                        <i class="fas fa-users w-5 text-slate-500 group-hover:text-emerald-400 transition-colors"></i> Master Pengguna
+                    </button>
+                    <button onclick="switchView('teknisi')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-left group">
+                        <i class="fas fa-tools w-5 text-slate-500 group-hover:text-orange-400 transition-colors"></i> Database Teknisi
                     </button>
                 </div>
             </nav>
 
-            <div class="p-4 border-t border-white/10 mt-auto">
-                <button onclick="window.doLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-xl text-sm font-bold transition-all border border-red-500/30">
-                    <i class="fas fa-sign-out-alt"></i> Keluar Sistem
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="doLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 transition-colors text-left">
+                    <i class="fas fa-sign-out-alt w-5"></i> Keluar Sistem
                 </button>
             </div>
         </aside>
 
         <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 bg-slate-50 flex flex-col h-screen overflow-hidden relative">
-            
-            <!-- HEADER -->
-            <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center shrink-0">
-                <div>
-                    <h2 id="header-title" class="text-2xl font-black uppercase italic text-slate-900 tracking-tight">Dashboard Overview</h2>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1" id="header-subtitle">Real-time Finance & IoT Data Sync</p>
-                </div>
-                <!-- Toggle Simulator IoT (Menggerakkan angka meteran kWh secara otomatis) -->
-                <div class="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200 shadow-sm cursor-help" title="Nyalakan untuk mensimulasikan alat ESP32 mengirim data kWh secara live">
-                    <span class="text-xs font-black text-slate-600 uppercase"><i class="fas fa-bolt text-amber-500 mr-1"></i> Live Simulator Engine</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="simulator-toggle" class="sr-only peer">
-                        <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
+        <main class="flex-1 bg-[#0f172a] h-full overflow-y-auto relative no-print">
+            <header class="h-20 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-8">
+                <h2 id="topbar-title" class="text-xl font-black text-white uppercase tracking-wider italic">Dashboard</h2>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Sistem Aktif</span>
+                    </div>
                 </div>
             </header>
 
-            <!-- AREA SCROLL KONTEN -->
-            <div class="flex-1 overflow-y-auto p-8" id="main-scroll-area">
+            <div class="p-8 pb-20 space-y-8">
                 
-                <!-- VIEW 1: DASHBOARD FINANSIAL -->
-                <div id="view-dashboard" class="space-y-8 hidden-el">
-                    <!-- Kartu Ringkasan Uang -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100 flex flex-col justify-center relative overflow-hidden">
-                            <div class="absolute right-0 top-0 w-24 h-24 bg-slate-50 rounded-bl-full -mr-4 -mt-4"></div>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Total Penghematan Murni</span>
-                            <span class="text-3xl font-black text-slate-800 mono truncate relative z-10 transition-all duration-300" id="dash-val-saving">Rp 0</span>
+                <div id="view-dashboard" class="hidden-el space-y-8">
+                    <!-- Project Selector (Semua Role kecuali Investor bisa melihat multi-proyek jika ada) -->
+                    <div id="project-selector-box" class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data View</p>
+                            <p class="text-sm font-bold text-white">Pilih Proyek / Gedung</p>
                         </div>
-                        <div class="bg-indigo-50 p-8 rounded-[2rem] card-shadow border border-indigo-100 flex flex-col justify-center relative overflow-hidden">
-                            <div class="absolute right-0 top-0 w-24 h-24 bg-indigo-100 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 relative z-10">Total Tagihan KSA (70%)</span>
-                            <span class="text-3xl font-black text-indigo-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-gross">Rp 0</span>
-                        </div>
-                        <div class="bg-amber-50 p-8 rounded-[2rem] card-shadow border border-amber-100 flex flex-col justify-center relative overflow-hidden">
-                            <div class="absolute right-0 top-0 w-24 h-24 bg-amber-100 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                            <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2 relative z-10">Fee Investor (60% dr Tagihan)</span>
-                            <span class="text-3xl font-black text-amber-900 mono truncate relative z-10 transition-all duration-300" id="dash-val-inv">Rp 0</span>
-                        </div>
-                        <div class="bg-emerald-950 p-8 rounded-[2rem] shadow-xl flex flex-col justify-center text-white relative overflow-hidden border border-emerald-800">
-                            <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full -mr-8 -mt-8"></div>
-                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 relative z-10">Laba KSA (40%)</span>
-                            <span class="text-3xl font-black text-white mono truncate relative z-10 transition-all duration-300" id="dash-val-ksa">Rp 0</span>
-                        </div>
+                        <select id="proj-select" onchange="changeActiveProject(this.value)" class="w-full md:w-1/2 bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 font-bold text-white outline-none cursor-pointer focus:border-amber-500 transition-all"></select>
                     </div>
 
-                    <!-- Tabel Breakdown Proyek Finansial -->
-                    <div class="bg-white rounded-[2.5rem] card-shadow border border-slate-100 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 class="font-black italic uppercase text-slate-900 text-lg"><i class="fas fa-file-invoice-dollar mr-2 text-indigo-600"></i> Rincian Penghematan & Bagi Hasil</h3>
-                            <button onclick="window.printInvoice()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2">
-                                <i class="fas fa-print"></i> Cetak Laporan
+                    <!-- Warning Proyek Kosong -->
+                    <div id="empty-project-msg" class="bg-slate-800 rounded-[2rem] p-16 text-center border border-slate-700 shadow-xl hidden-el">
+                        <i class="fas fa-search text-6xl text-slate-600 mb-6 block mx-auto"></i>
+                        <h3 class="text-xl font-bold uppercase italic text-white mb-2">Belum Ada Proyek Aktif</h3>
+                        <p class="text-slate-400 text-sm max-w-md mx-auto">Sistem sedang menunggu Admin KSA untuk mendaftarkan dan menghubungkan akun Anda dengan data kontrak proyek.</p>
+                    </div>
+
+                    <!-- MATRIKS FINANSIAL KSA -->
+                    <div id="finance-matrix" class="hidden-el space-y-8">
+                        
+                        <!-- Main Info & Print -->
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                            <div>
+                                <h2 class="text-3xl font-black italic uppercase text-white leading-none mb-1" id="dash-loc-name">Nama Gedung</h2>
+                                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest" id="dash-cust-email">Customer: -</p>
+                            </div>
+                            <button id="btn-print-invoice" onclick="printInvoice()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hidden-el"><i class="fas fa-print mr-2"></i> Cetak Invoice KSA</button>
+                        </div>
+
+                        <!-- 4 Kartu Metrik Utama (Rumus Baru) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                            <!-- 1. Saving -->
+                            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 relative overflow-hidden shadow-xl">
+                                <div class="absolute -right-6 -top-6 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl"></div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><i class="fas fa-leaf text-cyan-400 mr-1"></i> Total Penghematan Murni</p>
+                                <h4 id="dash-saving" class="text-3xl font-black text-white mono truncate">Rp 0</h4>
+                                <p class="text-xs text-slate-500 mt-2 font-medium">Baseline Normal - Aktual IoT</p>
+                            </div>
+                            
+                            <!-- 2. Tagihan 70% -->
+                            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 relative overflow-hidden shadow-xl">
+                                <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><i class="fas fa-file-invoice-dollar text-blue-400 mr-1"></i> Tagihan KSA (70%)</p>
+                                <h4 id="dash-tagihan" class="text-3xl font-black text-blue-400 mono truncate">Rp 0</h4>
+                                <p class="text-xs text-slate-500 mt-2 font-medium">Ditagihkan ke Customer (Sisa 30% Hak Customer)</p>
+                            </div>
+                            
+                            <!-- 3. Investor 60% -->
+                            <div class="bg-indigo-900/50 p-6 rounded-3xl border border-indigo-500/30 relative overflow-hidden shadow-xl">
+                                <div class="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/20 rounded-full blur-2xl"></div>
+                                <p class="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2"><i class="fas fa-hand-holding-usd text-amber-400 mr-1"></i> Fee Investor (60%)</p>
+                                <h4 id="dash-investor" class="text-3xl font-black text-amber-400 mono truncate">Rp 0</h4>
+                                <p class="text-xs text-indigo-300 mt-2 font-medium">Dari nilai Tagihan KSA</p>
+                            </div>
+
+                            <!-- 4. Laba KSA 40% -->
+                            <div class="bg-emerald-900/40 p-6 rounded-3xl border border-emerald-500/30 relative overflow-hidden shadow-xl">
+                                <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl"></div>
+                                <p class="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-2"><i class="fas fa-wallet text-emerald-400 mr-1"></i> Laba KSA (40%)</p>
+                                <h4 id="dash-ksa" class="text-3xl font-black text-emerald-400 mono truncate">Rp 0</h4>
+                                <p class="text-xs text-emerald-300 mt-2 font-medium">Net Profit Perusahaan KSA</p>
+                            </div>
+                        </div>
+
+                        <!-- Status Alat IoT -->
+                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                            <h3 class="font-black italic uppercase text-slate-900 mb-6">Status Perangkat IoT Aktual</h3>
+                            <div class="flex items-center gap-10">
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Baseline Proyek</p>
+                                    <p id="dash-base-kwh" class="text-2xl font-black text-slate-800 mono">0 kWh</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest mb-1">Konsumsi Berjalan (Aktual)</p>
+                                    <p id="dash-actual-kwh" class="text-3xl font-black text-cyan-600 mono">0 kWh</p>
+                                </div>
+                                <div class="hidden md:block flex-1 bg-slate-100 rounded-full h-4 overflow-hidden relative">
+                                    <div id="dash-bar-kwh" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full w-0 transition-all duration-1000"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Panel Khusus (Sisa Deposit Investor / Komisi Sales) -->
+                        <div id="panel-khusus-role" class="hidden-el bg-slate-800 rounded-3xl p-8 border border-slate-700"></div>
+                    </div>
+                </div>
+
+                <div id="view-iot" class="hidden-el space-y-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                        <div>
+                            <h3 class="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                                <i class="fas fa-server text-cyan-400"></i> Xtron Data Center
+                            </h3>
+                            <p class="text-slate-400 text-xs mt-1">Pemantauan & Kontrol AC Jarak Jauh.</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 bg-slate-900 px-4 py-2 rounded-xl border border-slate-700">
+                                <label class="text-xs font-bold text-slate-400 uppercase">Simulator IoT</label>
+                                <label class="relative inline-flex items-center cursor-pointer ml-2">
+                                    <input type="checkbox" id="sim-toggle" class="sr-only peer" checked onchange="toggleSimulator(this.checked)">
+                                    <div class="w-9 h-5 bg-slate-600 rounded-full peer peer-checked:after:translate-x-full after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                                </label>
+                            </div>
+                            <button id="btn-add-ac" onclick="showModalAc()" class="hidden-el bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-xl transition-colors shadow-lg">
+                                + Tambah Node AC
                             </button>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-200">
-                                    <tr>
-                                        <th class="py-4 px-6">Nama Proyek / Gedung</th>
-                                        <th class="py-4 px-6 text-right">Standard (Tanpa Xtron)</th>
-                                        <th class="py-4 px-6 text-right text-cyan-600 bg-cyan-50/50">Aktual IoT (kWh)</th>
-                                        <th class="py-4 px-6 text-right text-emerald-600 bg-emerald-50/50">Penghematan (Rp)</th>
-                                        <th class="py-4 px-6 text-right">Customer (30%)</th>
-                                        <th class="py-4 px-6 text-right text-indigo-600 bg-indigo-50/50">Tagihan KSA (70%)</th>
-                                        <th class="py-4 px-6 text-right text-amber-600">Investor (60%)</th>
-                                        <th class="py-4 px-6 text-right text-emerald-800">Laba KSA (40%)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-dash-body" class="divide-y divide-slate-100">
-                                    <!-- Diisi oleh Javascript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 2: MASTER PENGGUNA (HANYA ADMIN) -->
-                <div id="view-users" class="space-y-6 hidden-el">
-                    <div class="flex justify-between items-end mb-4">
-                        <div>
-                            <p class="text-sm font-bold text-slate-500">Kelola hak akses dan verifikasi akun pendana.</p>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-[2.5rem] card-shadow border border-slate-100 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100 bg-indigo-50/50">
-                            <h3 class="font-black italic uppercase text-indigo-950 text-lg"><i class="fas fa-users mr-2 text-indigo-600"></i> Database Hak Akses</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-200">
-                                    <tr>
-                                        <th class="py-4 px-6">Nama Lengkap / Instansi</th>
-                                        <th class="py-4 px-6">Peran & Status</th>
-                                        <th class="py-4 px-6 text-center">Username Login</th>
-                                        <th class="py-4 px-6 text-center">Kata Sandi</th>
-                                        <th class="py-4 px-6 text-right">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-users-body" class="divide-y divide-slate-100">
-                                    <!-- Diisi oleh Javascript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 3: MASTER KONTRAK / PROYEK (HANYA ADMIN) -->
-                <div id="view-projects" class="space-y-6 hidden-el">
-                    <div class="flex justify-end mb-4">
-                        <button onclick="window.openProjectModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest shadow-lg transition-all transform hover:scale-105">
-                            <i class="fas fa-plus-circle mr-2"></i> Buat Kontrak Baru
-                        </button>
-                    </div>
-                    <div class="bg-white rounded-[2.5rem] card-shadow border border-slate-100 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100 bg-indigo-50/50">
-                            <h3 class="font-black italic uppercase text-indigo-950 text-lg"><i class="fas fa-file-contract mr-2 text-indigo-600"></i> Daftar Kontrak Berjalan</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-200">
-                                    <tr>
-                                        <th class="py-4 px-6">Gedung / Lokasi</th>
-                                        <th class="py-4 px-6">Customer Terkait</th>
-                                        <th class="py-4 px-6 text-center">Hardware IOT</th>
-                                        <th class="py-4 px-6 text-right">Nilai CAPEX (Rp)</th>
-                                        <th class="py-4 px-6 text-right">Target Baseline</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-projects-body" class="divide-y divide-slate-100">
-                                    <!-- Diisi oleh Javascript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 4: PUSAT KENDALI IOT (DATA CENTER XTRON) -->
-                <div id="view-iot" class="space-y-6 hidden-el">
-                    
-                    <!-- Header Pemilih Proyek & Tambah AC -->
-                    <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="w-full md:w-1/2">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Filter Berdasarkan Proyek Gedung</label>
-                            <select id="iot-project-select" onchange="window.renderIoTPanel()" class="bg-slate-50 border-2 border-slate-100 px-4 py-3 rounded-xl font-bold text-sm w-full outline-none cursor-pointer focus:border-cyan-500"></select>
-                        </div>
-                        <!-- Tombol ini khusus Admin. Sengaja disembunyikan untuk role lain via JS -->
-                        <button id="btn-add-iot" onclick="window.openAddIoTModal()" class="hidden-el bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3.5 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg transition-all shrink-0 w-full md:w-auto transform hover:scale-105">
-                            <i class="fas fa-plus-circle mr-1"></i> Tambah Node AC
-                        </button>
                     </div>
 
-                    <!-- Pesan Kosong (Jika tidak ada AC/Proyek) -->
-                    <div id="iot-empty-msg" class="bg-white rounded-[3rem] p-20 text-center border border-slate-100 card-shadow">
-                        <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <i class="fas fa-satellite-dish text-5xl text-slate-300"></i>
-                        </div>
-                        <h3 class="text-xl font-black italic uppercase text-slate-800">Sistem Menunggu Koneksi</h3>
-                        <p class="font-bold text-slate-500 mt-2 max-w-md mx-auto">Pilih proyek gedung di atas, atau daftarkan modul perangkat keras ESP32 AC terlebih dahulu.</p>
+                    <!-- Wrapper untuk IOT Grid agar sinkron dengan Project Selector -->
+                    <div id="iot-empty-msg" class="text-center py-10 hidden-el">
+                        <p class="text-slate-500 italic">Pilih Proyek di Dashboard terlebih dahulu untuk melihat AC, atau buat Kontrak Proyek baru.</p>
                     </div>
-
-                    <!-- Grid Kartu AC -->
                     <div id="iot-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        <!-- Card AC akan di-render di sini oleh JavaScript secara dinamis -->
+                        <!-- Kartu AC -->
                     </div>
                 </div>
 
-            </div> <!-- End Scroll Area -->
+                <div id="view-chat" class="hidden-el h-[calc(100vh-12rem)] flex flex-col md:flex-row gap-6">
+                    <div id="chat-contacts" class="w-full md:w-1/3 bg-slate-800 rounded-3xl p-6 border border-slate-700 flex flex-col hidden-el">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-black italic uppercase tracking-tight text-white">Kontak Interaktif</h3>
+                            <i class="fas fa-address-book text-slate-400"></i>
+                        </div>
+                        <div id="contact-list" class="space-y-2 overflow-y-auto flex-1 pr-2"></div>
+                    </div>
+                    <div class="flex-1 bg-slate-800 rounded-3xl border border-slate-700 flex flex-col overflow-hidden">
+                        <div class="p-6 border-b border-slate-700 bg-slate-800/80 flex items-center gap-4 shrink-0">
+                            <div class="h-12 w-12 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-xl border border-indigo-500/30"><i class="fas fa-headset"></i></div>
+                            <div>
+                                <h4 id="chat-active-name" class="font-black uppercase text-white leading-tight">Memuat Kontak...</h4>
+                                <p id="chat-active-role" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">-</p>
+                            </div>
+                        </div>
+                        <div id="chat-messages" class="flex-1 p-6 overflow-y-auto bg-slate-900/50 space-y-4"></div>
+                        <div class="flex flex-col bg-slate-800 border-t border-slate-700 p-4 shrink-0">
+                            <div class="flex gap-2 items-center">
+                                <input type="text" id="chat-input" placeholder="Tuliskan pesan..." class="flex-1 bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                                <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md">Kirim</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-users" class="hidden-el space-y-8">
+                    <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden">
+                        <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-white uppercase tracking-widest">Master Database Pengguna</h2>
+                        </div>
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-700">
+                                    <tr>
+                                        <th class="py-4 px-4 font-bold">Identitas Akun</th>
+                                        <th class="py-4 px-4 font-bold">Peran (Role)</th>
+                                        <th class="py-4 px-4 font-bold text-center">Status Tier Investor</th>
+                                        <th class="py-4 px-4 font-bold text-center">Aksi Verifikasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-projects" class="hidden-el space-y-8">
+                    <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden">
+                        <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-white uppercase tracking-widest">Database Kontrak Proyek</h2>
+                            <button onclick="openProjectModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors">+ Buat Kontrak Baru</button>
+                        </div>
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-700">
+                                    <tr>
+                                        <th class="py-4 px-4 font-bold">Lokasi Gedung</th>
+                                        <th class="py-4 px-4 font-bold">Customer</th>
+                                        <th class="py-4 px-4 font-bold">Investor Pendana</th>
+                                        <th class="py-4 px-4 font-bold text-right">Total AC</th>
+                                        <th class="py-4 px-4 font-bold text-right">Target Baseline</th>
+                                        <th class="py-4 px-4 font-bold text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="projects-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teknisi Placeholder -->
+                <div id="view-teknisi" class="hidden-el bg-slate-800 rounded-3xl p-8 border border-slate-700 text-center">
+                    <h3 class="text-white font-bold mb-2">Manajemen Teknisi</h3>
+                    <p class="text-slate-400 text-sm">Data teknisi tersinkronisasi dengan Database Master Pengguna.</p>
+                </div>
+
+            </div>
         </main>
     </div>
 
-    <!-- MODAL: SETUP KONTRAK PROYEK -->
+    <!-- Modal Tambah Proyek -->
     <div id="modal-project" class="modal-overlay">
-        <div class="modal-container w-full max-w-4xl">
-            <div class="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <h3 class="font-black italic uppercase text-indigo-950 text-xl"><i class="fas fa-file-contract text-indigo-500 mr-2"></i> Setup Kontrak Baru</h3>
-                <button onclick="window.closeModal('modal-project')" class="text-slate-400 hover:text-slate-900 bg-white h-8 w-8 rounded-full shadow-sm"><i class="fas fa-times text-lg"></i></button>
+        <div class="modal-container bg-slate-800 border-slate-700 text-white max-w-4xl max-h-[85vh]">
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-black italic uppercase">Setup Kontrak & Registrasi AC</h3>
+                <button onclick="closeModal('modal-project')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-8 overflow-y-auto space-y-8 bg-white max-h-[70vh]">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2">Nama Gedung / Lokasi</label>
-                        <input type="text" id="proj-loc" placeholder="Misal: Menara Sudirman Lt.5" class="bg-slate-50 focus:bg-white">
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Customer Pemilik</label>
+                        <select id="proj-cust" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none"></select>
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2">ID Customer (Pemilik Gedung)</label>
-                        <select id="proj-cust" class="bg-slate-50 focus:bg-white cursor-pointer"></select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2">Nilai CAPEX Investasi (Rp)</label>
-                        <input type="number" id="proj-capex" value="50000000" class="bg-slate-50 focus:bg-white font-mono text-indigo-900">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase px-2">Baseline Listrik Normal (Target kWh)</label>
-                        <input type="number" id="proj-base" value="2500" class="bg-slate-50 focus:bg-white font-mono text-indigo-900">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Investor Pendana</label>
+                        <select id="proj-inv" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none"></select>
                     </div>
                 </div>
-
-                <!-- Bagian Registrasi Hardware AC Dinamis (Kapasitas Lengkap) -->
-                <div class="border-t-2 border-dashed border-slate-200 pt-8 mt-4">
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h4 class="text-sm font-black uppercase tracking-widest text-indigo-900">Registrasi Hardware & Kapasitas</h4>
-                            <p class="text-xs text-slate-500 font-bold mt-1">Sistem otomatis membuat Node IoT (Database) untuk setiap baris yang didaftarkan.</p>
-                        </div>
-                        <button onclick="window.addProjectACRow()" class="text-xs font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-4 py-3 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                            <i class="fas fa-plus mr-1"></i> Tambah Baris AC
-                        </button>
-                    </div>
-                    <div id="proj-ac-rows" class="space-y-3">
-                        <!-- Baris input AC akan ditambahkan di sini via JavaScript -->
-                    </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Lokasi Gedung / Proyek</label>
+                    <input type="text" id="proj-loc" placeholder="Misal: PT Teknologi Maju" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none">
+                </div>
+                <div class="pt-4 border-t border-slate-700">
+                    <label class="block text-[10px] font-black text-amber-500 uppercase mb-3">Daftar Unit AC & Kapasitas (PK)</label>
+                    <div id="ac-rows-container" class="space-y-3 mb-4"></div>
+                    <button onclick="addProjectACRow()" class="w-full border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-slate-400 py-3 rounded-xl text-xs font-bold transition-all">+ Tambah Baris AC</button>
                 </div>
             </div>
-            <div class="p-6 border-t border-slate-100 bg-slate-50">
-                <button onclick="window.saveProject()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all transform hover:scale-[1.01]">Simpan Kontrak & Buat Database IoT</button>
+            <div class="p-6 border-t border-slate-700 bg-slate-900/50 flex justify-between items-center shrink-0">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Target Baseline Sistem</p>
+                    <p id="proj-calc-base" class="text-xl font-black text-cyan-400 mono">0 kWh</p>
+                </div>
+                <button onclick="saveProject()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg">Simpan Proyek</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: TAMBAH NODE IOT INDIVIDU -->
-    <div id="modal-iot" class="modal-overlay">
-        <div class="modal-container w-full max-w-lg">
-            <div class="p-6 border-b border-slate-100 bg-cyan-50 flex justify-between items-center">
-                <h3 class="font-black italic uppercase text-cyan-900 text-lg"><i class="fas fa-microchip mr-2 text-cyan-600"></i> Register Node IoT</h3>
-                <button onclick="window.closeModal('modal-iot')" class="text-slate-400 hover:text-slate-900 bg-white h-8 w-8 rounded-full shadow-sm"><i class="fas fa-times text-lg"></i></button>
+    <!-- Modal Tambah Node AC (IoT) dari Dashboard -->
+    <div id="modal-ac" class="modal-overlay">
+        <div class="modal-container bg-slate-800 border-slate-700 text-white max-w-md">
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-black italic uppercase">Registrasi Hardware IoT</h3>
+                <button onclick="closeModal('modal-ac')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-8 space-y-5 bg-white">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase px-2">Nama Ruangan / Unit AC</label>
-                    <input type="text" id="iot-name" placeholder="Misal: AC Ruang Direktur" class="bg-slate-50 focus:bg-white">
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">MAC Address / ID ESP32</label>
+                    <input type="text" id="ac-mac" placeholder="Misal: ESP-A1B2" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none">
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase px-2">MAC Address ESP32 (Harus Unik)</label>
-                    <input type="text" id="iot-mac" class="font-mono uppercase text-cyan-700 bg-slate-50 focus:bg-white" placeholder="Misal: MAC-A1B2C3D4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nama / Ruangan</label>
+                    <input type="text" id="ac-name" placeholder="Misal: Ruang Server" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none">
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase px-2">Pilih Kapasitas AC</label>
-                    <select id="iot-pk" class="bg-slate-50 focus:bg-white cursor-pointer font-bold">
-                        <option value="0.5">0.5 PK</option>
-                        <option value="0.75">0.75 PK</option>
-                        <option value="1" selected>1 PK</option>
-                        <option value="1.5">1.5 PK</option>
-                        <option value="2">2 PK</option>
-                        <option value="3">3 PK</option>
-                        <option value="5">5 PK (Floor Standing)</option>
-                        <option value="10">10 PK (Central)</option>
-                        <option value="20">20 PK (VRV/Chiller)</option>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kapasitas (PK)</label>
+                    <select id="ac-pk" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 focus:outline-none">
+                        <!-- Disuntikkan JS (0.5 - 20) -->
                     </select>
                 </div>
-            </div>
-            <div class="p-6 border-t border-slate-100 bg-slate-50">
-                <button onclick="window.saveNodeIoT()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all transform hover:scale-[1.02]">Hubungkan Hardware Ke Server</button>
+                <button onclick="saveNodeAc()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 mt-4 rounded-xl font-bold shadow-lg">Koneksikan Alat</button>
             </div>
         </div>
     </div>
 
-    <!-- INVOICE PRINT AREA (Tersembunyi, hanya muncul saat di-print) -->
-    <div id="invoice-print-area" class="hidden absolute top-0 left-0 w-full bg-white text-black p-10 font-sans">
-        <!-- Akan diisi oleh JS saat tombol Cetak Invoice ditekan -->
+    <!-- TEMPLATE CETAK INVOICE -->
+    <div id="invoice-print-template" class="p-8 max-w-4xl mx-auto bg-white text-slate-900 border border-slate-200 shadow-xl m-10">
+        <div class="border-b-4 border-indigo-950 pb-6 mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-black italic uppercase tracking-tighter text-indigo-950 leading-none">KSA XTRON</h1>
+                <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.2em] mt-2">Sistem Efisiensi Energi</p>
+            </div>
+            <div class="text-right">
+                <h2 class="text-3xl font-black text-slate-800 uppercase tracking-widest mb-2">INVOICE TAGIHAN</h2>
+                <p class="text-sm font-bold text-slate-600" id="inv-date">Tanggal: -</p>
+                <p class="text-sm font-bold text-slate-600">No: <span id="inv-number" class="mono text-indigo-700">-</span></p>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-start mb-10">
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 min-w-[300px]">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Ditagihkan Kepada:</p>
+                <p class="text-xl font-black text-slate-800 uppercase mb-1" id="inv-cust-name">-</p>
+                <p class="text-sm font-bold text-slate-600 uppercase" id="inv-cust-loc"><i class="fas fa-map-marker-alt mr-1"></i> -</p>
+            </div>
+        </div>
+
+        <table class="w-full text-left border-collapse mb-10">
+            <thead class="bg-indigo-950 text-white">
+                <tr>
+                    <th class="py-4 px-6 text-xs font-bold uppercase tracking-widest rounded-tl-xl">Keterangan / Parameter</th>
+                    <th class="py-4 px-6 text-xs font-bold uppercase tracking-widest text-right rounded-tr-xl">Nilai (IDR)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 border border-slate-200">
+                <tr>
+                    <td class="py-5 px-6 text-sm font-bold text-slate-500 italic">Baseline (Tanpa Sistem KSA)</td>
+                    <td class="py-5 px-6 text-right text-sm font-bold text-slate-400 mono" id="inv-val-normal">-</td>
+                </tr>
+                <tr>
+                    <td class="py-5 px-6 text-sm font-bold text-slate-700">Aktual Pemakaian (Dengan IoT)</td>
+                    <td class="py-5 px-6 text-right text-sm font-black text-slate-800 mono" id="inv-val-actual">-</td>
+                </tr>
+                <tr class="bg-emerald-50/50">
+                    <td class="py-5 px-6 text-sm font-black text-emerald-700 uppercase">Penghematan Murni (Saving)</td>
+                    <td class="py-5 px-6 text-right text-base font-black text-emerald-600 mono" id="inv-val-saving">-</td>
+                </tr>
+                <tr class="bg-indigo-50 border-t-2 border-indigo-200">
+                    <td class="py-6 px-6 text-base font-black text-indigo-950 uppercase tracking-widest">Total Tagihan KSA (70% dari Saving)</td>
+                    <td class="py-6 px-6 text-right text-2xl font-black text-indigo-700 mono" id="inv-val-total">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="border-t-2 border-dashed border-slate-200 pt-8 text-center mt-10">
+            <p class="text-sm font-black text-slate-800 uppercase border-b border-slate-800 pb-1 inline-block">DIVISI KEUANGAN KSA</p>
+        </div>
     </div>
 
 
     <script>
-        // --- GLOBAL STATE (Meniru struktur Firestore untuk menjalankan seluruh fungsi tanpa server) ---
-        window.dbUsers = [];
-        window.dbProjects = [];
-        window.dbDevices = []; // Tabel perangkat IOT
-        window.activeUser = null;
+        // KONSTANTA KAPASITAS AC LENGKAP
+        const AC_OPTIONS = [0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 15, 20];
+        const TARIF_KWH = 1500;
+        const RUMUS_WATT_PER_PK = 800; // Asumsi 1 PK = 800 Watt (0.8 kW)
+        const ASUMSI_JAM_BULAN = 12 * 30; // 12 Jam x 30 Hari
 
-        // Rentang Kapasitas AC (PK) Terlengkap
-        const CAPACITIES = [0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 18, 20];
-        const TARIF_PLN = 1615; // Asumsi Tarif Listrik Per kWh (Rp)
+        // DATABASE LOKAL (Self-Healing jika Firebase mati)
+        let dbUsers = JSON.parse(localStorage.getItem('ksa_users')) || [];
+        let dbProjects = JSON.parse(localStorage.getItem('ksa_projects')) || [];
+        let dbDevices = JSON.parse(localStorage.getItem('ksa_devices')) || [];
+        let dbChats = JSON.parse(localStorage.getItem('ksa_chats')) || [];
 
-        // --- SISTEM MODAL (Pengganti Alert Bawaan) ---
+        let activeUser = null;
+        let activeProject = null;
+        let simulatorInterval = null;
+
+        // Seeder Awal
+        function seedLocalData() {
+            if(dbUsers.length === 0) {
+                dbUsers.push({ id: 'u_admin', username: 'admin', pass: '123', name: 'Super Administrator', role: 'admin', verified: true });
+                localStorage.setItem('ksa_users', JSON.stringify(dbUsers));
+            }
+            
+            // Populasikan Dropdown AC
+            const pkSelect = document.getElementById('ac-pk');
+            if(pkSelect) {
+                pkSelect.innerHTML = AC_OPTIONS.map(pk => `<option value="${pk}">${pk} PK</option>`).join('');
+            }
+        }
+        seedLocalData();
+
+        // UTILS
+        const formatRp = (num) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(num);
+        const formatKwh = (num) => new Intl.NumberFormat('id-ID', {maximumFractionDigits:1}).format(num);
+        const cleanStr = (s) => (s||'').toString().trim();
+
+        // UI Modals
         window.showAlert = (msg) => {
             document.getElementById('alert-msg').innerText = msg;
-            document.getElementById('custom-alert-modal').classList.add('modal-active');
-        };
-        window.closeAlert = () => {
-            document.getElementById('custom-alert-modal').classList.remove('modal-active');
-        };
-        window.closeModal = (id) => {
-            document.getElementById(id).classList.remove('modal-active');
-        };
-        window.openModal = (id) => {
-            document.getElementById(id).classList.add('modal-active');
+            document.getElementById('alert-cancel-btn').classList.add('hidden-el');
+            const m = document.getElementById('custom-alert-modal');
+            m.classList.add('modal-active');
+            document.getElementById('alert-ok-btn').onclick = () => m.classList.remove('modal-active');
         };
 
-        // --- SISTEM SELF-HEALING (Seeder Data Awal agar selalu bisa Login) ---
-        function seedLocalData() {
-            if(window.dbUsers.length === 0) {
-                // Admin Utama
-                window.dbUsers.push({ username: 'admin', pass: '123', role: 'admin', name: 'Super Admin KSA', verified: true });
-                // Customer Pemilik Gedung
-                window.dbUsers.push({ username: 'customer1', pass: '123', role: 'customer', name: 'PT Angkasa Raya', verified: true });
-                // Investor dengan Tier
-                window.dbUsers.push({ username: 'investor1', pass: '123', role: 'investor', name: 'Bpk. Budi (Investor)', tier: 'A', verified: true });
-                // Investor Baru (Belum diverifikasi Admin)
-                window.dbUsers.push({ username: 'investor2', pass: '123', role: 'investor', name: 'Bpk. Andi', tier: 'C', verified: false });
-            }
-            if(window.dbProjects.length === 0) {
-                const prjId = 'PRJ-101';
-                window.dbProjects.push({
-                    id: prjId,
-                    location: 'Gedung Sudirman Lantai 5',
-                    custEmail: 'customer1',
-                    capex: 150000000,
-                    baseline: 3500 // Target kWh Normal
-                });
+        window.showConfirm = (msg, onOk) => {
+            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('alert-cancel-btn').classList.remove('hidden-el');
+            const m = document.getElementById('custom-alert-modal');
+            m.classList.add('modal-active');
+            document.getElementById('alert-ok-btn').onclick = () => { m.classList.remove('modal-active'); onOk(); };
+            document.getElementById('alert-cancel-btn').onclick = () => m.classList.remove('modal-active');
+        };
 
-                // Memasukkan data IOT otomatis (Tersambung ke Proyek PRJ-101)
-                window.dbDevices.push({ id: 'MAC-A1:B2:C3', projectId: prjId, name: 'AC Lobby Utama', pk: 2, kwh: 120, power: true, temp: 24 });
-                window.dbDevices.push({ id: 'MAC-D4:E5:F6', projectId: prjId, name: 'AC Ruang Meeting', pk: 1.5, kwh: 85, power: true, temp: 22 });
-                window.dbDevices.push({ id: 'MAC-G7:H8:I9', projectId: prjId, name: 'AC Server Room (Standby)', pk: 5, kwh: 500, power: true, temp: 18 });
+        function uiModal(id, open) {
+            const m = document.getElementById(id);
+            if (open) m.classList.add('modal-active');
+            else m.classList.remove('modal-active');
+        }
+        function closeModal(id) { uiModal(id, false); }
+
+        function toggleAuth(mode) {
+            if(mode === 'register') {
+                document.getElementById('login-view').classList.add('hidden-el');
+                document.getElementById('register-view').classList.remove('hidden-el');
+            } else {
+                document.getElementById('register-view').classList.add('hidden-el');
+                document.getElementById('login-view').classList.remove('hidden-el');
             }
         }
 
-        // Jalankan Seeder saat file dibuka
-        seedLocalData();
+        function checkTierSelection() {
+            const role = document.getElementById('reg-role').value;
+            const tb = document.getElementById('reg-tier-box');
+            if(role === 'investor') tb.classList.remove('hidden-el');
+            else tb.classList.add('hidden-el');
+        }
 
-        // --- LOGIKA AUTHENTICATION ---
-        window.toggleAuthView = (view) => {
-            document.getElementById('login-view').classList.add('hidden-el');
-            document.getElementById('register-view').classList.add('hidden-el');
-            document.getElementById('admin-login-view').classList.add('hidden-el');
-            if(view === 'register') document.getElementById('register-view').classList.remove('hidden-el');
-            else if(view === 'admin') document.getElementById('admin-login-view').classList.remove('hidden-el');
-            else document.getElementById('login-view').classList.remove('hidden-el');
-        };
-
-        // Memunculkan Dropdown Tier KHUSUS jika user memilih role Investor
-        window.toggleTierSelect = (role) => {
-            const tierContainer = document.getElementById('reg-tier-container');
-            if(role === 'investor') {
-                tierContainer.classList.remove('hidden-el');
-            } else {
-                tierContainer.classList.add('hidden-el');
-            }
-        };
-
-        // Telur Paskah: Klik 3x untuk memunculkan portal Rahasia Admin
-        let adminClickCount = 0;
-        let adminClickTimer = null;
-        window.triggerAdminLogin = () => {
-            adminClickCount++;
-            if (adminClickCount === 3) {
-                window.toggleAuthView('admin');
-                adminClickCount = 0;
-            }
-            clearTimeout(adminClickTimer);
-            adminClickTimer = setTimeout(() => { adminClickCount = 0; }, 1000);
-        };
-
-        window.doLogin = (context) => {
-            let userIn, passIn;
-            if(context === 'admin') {
-                userIn = document.getElementById('admin-login-username').value.trim();
-                passIn = document.getElementById('admin-login-password').value.trim();
-            } else {
-                userIn = document.getElementById('login-email').value.trim();
-                passIn = document.getElementById('login-password').value.trim();
-            }
-
-            if(!userIn || !passIn) return window.showAlert("Harap isi username dan password Anda secara lengkap.");
-            
-            // Pencarian data di Database Memory
-            const user = window.dbUsers.find(u => u.username === userIn && u.pass === passIn);
-            
-            if(user) {
-                // Keamanan Level 1: Cegat Investor yang belum diverifikasi oleh Admin
-                if (user.role === 'investor' && !user.verified) {
-                    return window.showAlert(`LOGIN DITOLAK!\n\nAkun Anda (Paket TIER ${user.tier}) saat ini sedang dalam proses verifikasi antrean oleh Admin KSA. Silakan selesaikan administrasi investasi Anda terlebih dahulu.`);
-                }
-
-                // Jika lolos, set user aktif
-                window.activeUser = user;
-                
-                // Animasi masuk ke dalam Dashboard
-                document.getElementById('auth-screen').classList.add('hidden-el');
-                document.getElementById('app-content').classList.remove('hidden-el');
-                
-                // Update UI Sidebar dengan nama user
-                document.getElementById('sb-user-name').innerText = user.name;
-                document.getElementById('sb-user-role').innerText = user.role === 'investor' ? `INVESTOR (TIER ${user.tier})` : user.role;
-                
-                // Buka Kunci Menu Admin jika yang login adalah admin
-                if(user.role === 'admin') {
-                    document.getElementById('admin-menus').classList.remove('hidden-el');
-                } else {
-                    document.getElementById('admin-menus').classList.add('hidden-el');
-                }
-                
-                // Lempar ke view default
-                window.switchView('dashboard');
-            } else {
-                window.showAlert("Login Gagal! Username atau password yang Anda masukkan salah.");
-            }
-        };
-
-        window.doRegister = () => {
-            const name = document.getElementById('reg-name').value.trim();
-            const username = document.getElementById('reg-username').value.trim();
-            const pass = document.getElementById('reg-password').value.trim();
+        // AUTHENTICATION
+        function doRegister() {
+            const name = cleanStr(document.getElementById('reg-name').value);
+            const email = cleanStr(document.getElementById('reg-email').value);
+            const pass = cleanStr(document.getElementById('reg-password').value);
             const role = document.getElementById('reg-role').value;
             const tier = document.getElementById('reg-tier').value;
-            
-            if(!name || !username || !pass) return window.showAlert("Pendaftaran gagal. Harap lengkapi semua kolom!");
-            if(window.dbUsers.find(u => u.username === username)) return window.showAlert("Pendaftaran gagal. Username tersebut sudah dipakai orang lain.");
 
-            // Aturan Bisnis: Selain investor, otomatis terverifikasi. Investor harus menunggu konfirmasi Admin.
-            const isVerified = role === 'investor' ? false : true;
+            if(!name || !email || !pass) return showAlert("Semua kolom harus diisi!");
+            if(dbUsers.find(u => u.username === email)) return showAlert("Username/Email sudah terdaftar!");
 
-            // Simpan ke Database
-            window.dbUsers.push({ name, username, pass, role, tier: role === 'investor' ? tier : null, verified: isVerified });
+            const isVerified = (role !== 'investor'); // Investor butuh admin verify
+            const newUser = { id: 'U_'+Date.now(), username: email, pass: pass, name: name, role: role, verified: isVerified, tier: role==='investor'?tier:null };
             
-            if (!isVerified) {
-                window.showAlert(`Pendaftaran Investor BERHASIL!\n\nAnda memilih komitmen pendanaan Paket TIER ${tier}. Akun Anda saat ini dikunci. Silakan hubungi Admin PT. KSA untuk memverifikasi akun Anda agar bisa masuk ke dashboard.`);
+            dbUsers.push(newUser);
+            localStorage.setItem('ksa_users', JSON.stringify(dbUsers));
+            
+            showAlert(isVerified ? "Pendaftaran berhasil! Silakan Login." : `Pendaftaran Investor (Tier ${tier}) berhasil!\nHarap tunggu verifikasi Admin sebelum login.`);
+            toggleAuth('login');
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').value = pass;
+        }
+
+        function doLogin() {
+            const email = cleanStr(document.getElementById('login-email').value);
+            const pass = cleanStr(document.getElementById('login-password').value);
+
+            const user = dbUsers.find(u => u.username === email && u.pass === pass);
+            if(!user) return showAlert("Username atau Sandi salah!");
+            if(!user.verified) return showAlert("AKUN TERKUNCI:\nAdmin belum memverifikasi pendaftaran (Tier) Anda.");
+
+            activeUser = user;
+            localStorage.setItem('ksa_session', JSON.stringify(user));
+            
+            document.getElementById('auth-screen').classList.add('hidden-el');
+            document.getElementById('app-content').classList.remove('hidden-el');
+            
+            document.getElementById('sb-user-name').innerText = user.name;
+            document.getElementById('sb-user-role').innerText = user.role.toUpperCase();
+
+            const admMenus = document.getElementById('admin-menus');
+            const btnPrint = document.getElementById('btn-print-invoice');
+            if(user.role === 'admin') {
+                admMenus.classList.remove('hidden-el');
+                if(btnPrint) btnPrint.classList.remove('hidden-el');
             } else {
-                window.showAlert("Pendaftaran berhasil! Silakan login menggunakan kredensial Anda.");
+                admMenus.classList.add('hidden-el');
+                if(btnPrint) btnPrint.classList.add('hidden-el');
             }
-            
-            window.toggleAuthView('login');
-            document.getElementById('login-email').value = username;
-            document.getElementById('login-password').value = '';
-        };
 
-        window.doLogout = () => {
-            window.showConfirm("Anda yakin ingin keluar dari sistem?", () => {
-                window.activeUser = null;
-                document.getElementById('app-content').classList.add('hidden-el');
-                document.getElementById('auth-screen').classList.remove('hidden-el');
-                document.getElementById('login-password').value = '';
-                // Matikan simulator agar tagihan tidak bengkak saat logout
-                document.getElementById('simulator-toggle').checked = false;
+            const savedView = localStorage.getItem('ksa_view') || 'dashboard';
+            switchView(savedView);
+        }
+
+        function doLogout() {
+            showConfirm("Yakin ingin keluar?", () => {
+                activeUser = null;
+                localStorage.removeItem('ksa_session');
+                localStorage.removeItem('ksa_view');
+                if(simulatorInterval) clearInterval(simulatorInterval);
+                location.reload();
             });
-        };
+        }
 
-        // Fungsi khusus Helper Konfirmasi (Confirm Modal)
-        window.showConfirm = (msg, onConfirmCallback) => {
-            document.getElementById('alert-msg').innerText = msg;
-            document.getElementById('alert-title').innerText = "Konfirmasi Tindakan";
-            document.getElementById('alert-icon').innerHTML = '<i class="fas fa-question-circle"></i>';
-            
-            const btnContainer = document.getElementById('alert-buttons');
-            // Reset isi container
-            btnContainer.innerHTML = '';
-            
-            const btnCancel = document.createElement('button');
-            btnCancel.className = "bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all flex-1";
-            btnCancel.innerText = "Batal";
-            btnCancel.onclick = () => window.closeAlert();
-
-            const btnOk = document.createElement('button');
-            btnOk.className = "bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all flex-1";
-            btnOk.innerText = "Ya, Lanjutkan";
-            btnOk.onclick = () => { window.closeAlert(); onConfirmCallback(); };
-
-            btnContainer.appendChild(btnCancel);
-            btnContainer.appendChild(btnOk);
-            
-            document.getElementById('custom-alert-modal').classList.add('modal-active');
-        };
-
-        // Menimpa close alert agar reset tombol kembali jadi 1 tombol "Mengerti" saja
-        const originalCloseAlert = window.closeAlert;
-        window.closeAlert = () => {
-            document.getElementById('custom-alert-modal').classList.remove('modal-active');
-            setTimeout(() => {
-                document.getElementById('alert-title').innerText = "Pemberitahuan";
-                document.getElementById('alert-icon').innerHTML = '<i class="fas fa-exclamation-circle"></i>';
-                document.getElementById('alert-buttons').innerHTML = '<button id="alert-ok-btn" onclick="window.closeAlert()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all flex-1">Mengerti</button>';
-            }, 300); // Tunggu animasi selesai
-        };
-
-
-        // --- LOGIKA NAVIGASI VIEW ---
-        window.switchView = (view) => {
-            // Sembunyikan semua konten terlebih dahulu
-            ['view-dashboard', 'view-users', 'view-projects', 'view-iot'].forEach(id => {
-                document.getElementById(id).classList.add('hidden-el');
-            });
-            // Tampilkan yang diminta
-            document.getElementById('view-' + view).classList.remove('hidden-el');
-
-            // Ganti Title Header di Atas sesuai Menu
-            const titleEl = document.getElementById('header-title');
-            const subEl = document.getElementById('header-subtitle');
-
-            if(view === 'dashboard') {
-                titleEl.innerText = "Dashboard Finansial";
-                subEl.innerText = "Pemantauan Profit, Penghematan & Invoice";
-                window.renderDashboard();
-            } else if (view === 'iot') {
-                titleEl.innerText = "Pusat Kendali IoT";
-                subEl.innerText = "Manajemen AC & Perangkat Keras Xtron";
-                window.populateIoTProjectDropdown();
-                window.renderIoTPanel();
-            } else if (view === 'users') {
-                titleEl.innerText = "Database Akses";
-                subEl.innerText = "Pengelolaan Akun & Verifikasi Pendana";
-                window.renderUserTable();
-            } else if (view === 'projects') {
-                titleEl.innerText = "Master Kontrak";
-                subEl.innerText = "Pembuatan Proyek Finansial Baru";
-                window.renderProjectTable();
+        function restoreSession() {
+            const savedStr = localStorage.getItem('ksa_session');
+            if(savedStr) {
+                const parsed = JSON.parse(savedStr);
+                const validUser = dbUsers.find(u => u.username === parsed.username);
+                if(validUser && validUser.verified) {
+                    document.getElementById('login-email').value = validUser.username;
+                    document.getElementById('login-password').value = validUser.pass;
+                    doLogin();
+                } else {
+                    localStorage.removeItem('ksa_session');
+                }
             }
-        };
+        }
 
-        // --- MASTER PENGGUNA (Hanya Admin) ---
-        window.renderUserTable = () => {
-            const tbody = document.getElementById('table-users-body');
+        function switchView(view) {
+            localStorage.setItem('ksa_view', view);
+            ['view-dashboard', 'view-iot', 'view-chat', 'view-users', 'view-projects', 'view-teknisi'].forEach(v => {
+                const el = document.getElementById(v);
+                if(el) el.classList.add('hidden-el');
+            });
+            
+            const target = document.getElementById('view-' + view);
+            if(target) target.classList.remove('hidden-el');
+
+            let title = 'Portal';
+            if(view === 'dashboard') { title = 'Finance Dashboard'; renderFinance(); }
+            if(view === 'iot') { title = 'Pusat Kendali IoT'; renderIoT(); }
+            if(view === 'chat') { title = 'Pusat Pesan'; renderChatContacts(); }
+            if(view === 'users') { title = 'Master Pengguna'; renderUsers(); }
+            if(view === 'projects') { title = 'Master Kontrak'; renderProjects(); }
+            
+            document.getElementById('topbar-title').innerText = title;
+        }
+
+        function getAvailableOptions(role) {
+            return dbUsers.filter(u => u.role === role).map(u => `<option value="${u.id}">${u.name} (${u.username})</option>`).join('');
+        }
+
+        function openProjectModal() {
+            document.getElementById('proj-cust').innerHTML = '<option value="">-- Pilih Customer --</option>' + getAvailableOptions('customer');
+            document.getElementById('proj-inv').innerHTML = '<option value="">-- Pilih Investor --</option>' + getAvailableOptions('investor');
+            document.getElementById('proj-loc').value = '';
+            document.getElementById('ac-rows-container').innerHTML = '';
+            document.getElementById('proj-calc-base').innerText = '0 kWh';
+            addProjectACRow();
+            uiModal('modal-project', true);
+        }
+
+        function addProjectACRow() {
+            const container = document.getElementById('ac-rows-container');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center ac-row';
+            
+            let pkOptions = AC_OPTIONS.map(pk => `<option value="${pk}">${pk} PK</option>`).join('');
+            
+            row.innerHTML = `
+                <select class="ac-pk w-1/3 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none" onchange="calcProjectBaseline()">${pkOptions}</select>
+                <input type="number" min="1" value="1" class="ac-qty w-1/4 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none text-center" placeholder="Jml" onchange="calcProjectBaseline()" onkeyup="calcProjectBaseline()">
+                <input type="text" class="ac-mac w-1/2 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none" placeholder="MAC Address / ID IoT">
+                <button onclick="this.parentElement.remove(); calcProjectBaseline();" class="text-red-400 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+            calcProjectBaseline();
+        }
+
+        function calcProjectBaseline() {
+            let totalBase = 0;
+            document.querySelectorAll('.ac-row').forEach(row => {
+                const pk = parseFloat(row.querySelector('.ac-pk').value) || 0;
+                const qty = parseInt(row.querySelector('.ac-qty').value) || 0;
+                const kw = (pk * RUMUS_WATT_PER_PK) / 1000;
+                totalBase += (kw * ASUMSI_JAM_BULAN * qty);
+            });
+            document.getElementById('proj-calc-base').innerText = formatKwh(totalBase) + ' kWh / Bln';
+            return totalBase;
+        }
+
+        function saveProject() {
+            const cId = document.getElementById('proj-cust').value;
+            const iId = document.getElementById('proj-inv').value;
+            const loc = document.getElementById('proj-loc').value.trim();
+
+            if(!cId || !iId || !loc) return showAlert("Customer, Investor, dan Lokasi wajib diisi!");
+
+            const baseline = calcProjectBaseline();
+            const projId = 'PRJ-' + Date.now();
+            let newDevices = [];
+            let isValid = true;
+
+            document.querySelectorAll('.ac-row').forEach((row, idx) => {
+                const pk = parseFloat(row.querySelector('.ac-pk').value);
+                const qty = parseInt(row.querySelector('.ac-qty').value);
+                const macRaw = row.querySelector('.ac-mac').value.trim();
+                
+                if(qty < 1 || !macRaw) isValid = false;
+                
+                // Buat device untuk setiap kuantitas (Jika qty=2, buat 2 IoT MAC yg ditambahkan auto-suffix)
+                for(let i=0; i<qty; i++) {
+                    let finalMac = macRaw.toUpperCase().replace(/\s/g, '-');
+                    if(qty > 1) finalMac += `-${i+1}`; // suffix
+                    
+                    if(dbDevices.find(d => d.id === finalMac)) isValid = false; // Mac tabrakan
+
+                    newDevices.push({
+                        id: finalMac, projectId: projId, ownerId: cId,
+                        name: `AC ${pk} PK`, location: loc,
+                        pk: pk, baseline: ((pk * RUMUS_WATT_PER_PK) / 1000) * ASUMSI_JAM_BULAN,
+                        baseData: 10, power: true, temp: 24, status: 'online'
+                    });
+                }
+            });
+
+            if(!isValid) return showAlert("Cek kembali jumlah AC dan MAC Address. Pastikan tidak kosong dan MAC belum pernah dipakai alat lain.");
+
+            const newProj = { id: projId, custId: cId, invId: iId, location: loc, baseline: baseline };
+            
+            dbProjects.push(newProj);
+            dbDevices = dbDevices.concat(newDevices);
+            
+            localStorage.setItem('ksa_projects', JSON.stringify(dbProjects));
+            localStorage.setItem('ksa_devices', JSON.stringify(dbDevices));
+            
+            closeModal('modal-project');
+            showAlert("Kontrak Proyek & Alat IoT Berhasil Disimpan!");
+            renderProjects();
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-tbody');
             if(!tbody) return;
             tbody.innerHTML = '';
-            
-            // Render ulang isi tabel berdasarkan database lokal
-            window.dbUsers.forEach((u) => {
-                let roleBadge = `<span class="bg-slate-200 px-3 py-1 rounded-lg uppercase text-[10px] font-black">${u.role}</span>`;
-                let actionBtn = '-';
+
+            dbUsers.forEach(u => {
+                if(u.role === 'admin') return;
                 
-                // Logika khusus untuk menampilkan Tier dan Tombol Verifikasi Investor
-                if (u.role === 'investor') {
-                    roleBadge += ` <span class="bg-amber-100 text-amber-600 px-3 py-1 rounded-lg uppercase text-[10px] font-black ml-1 border border-amber-200">TIER ${u.tier || '-'}</span>`;
-                    
-                    if (!u.verified) {
-                        roleBadge += ` <span class="bg-red-100 text-red-600 px-3 py-1 rounded-lg uppercase text-[10px] font-black ml-1 border border-red-200 animate-pulse">LOCKED</span>`;
-                        actionBtn = `<button onclick="window.verifyInvestor('${u.username}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md transition-transform transform hover:scale-105"><i class="fas fa-check-circle mr-1"></i> Verifikasi</button>`;
-                    } else {
-                        roleBadge += ` <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg uppercase text-[10px] font-black ml-1 border border-emerald-200">VERIFIED</span>`;
-                        actionBtn = `<span class="text-xs font-bold text-slate-400 italic">Aktif</span>`;
-                    }
-                } else if (u.role === 'admin') {
-                    actionBtn = `<span class="text-xs font-bold text-indigo-500 italic"><i class="fas fa-crown"></i> Master</span>`;
+                let statBadge = u.verified ? `<span class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-[9px] font-bold">VERIFIED</span>` : `<span class="text-red-400 bg-red-500/10 px-2 py-1 rounded text-[9px] font-bold animate-pulse">UNVERIFIED</span>`;
+                let tierText = u.role==='investor' ? `TIER ${u.tier||'-'}` : '-';
+                
+                let btn = '';
+                if(!u.verified) {
+                    btn = `<button onclick="verifyUser('${u.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors w-full">Verifikasi</button>`;
+                } else {
+                    btn = `<button onclick="deleteUser('${u.id}')" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors w-full">Hapus</button>`;
                 }
 
                 tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition-colors">
-                        <td class="py-4 px-6 font-black text-slate-900 uppercase">${u.name}</td>
-                        <td class="py-4 px-6 flex items-center flex-wrap gap-1">${roleBadge}</td>
-                        <td class="py-4 px-6 text-center font-bold text-indigo-600 bg-indigo-50/50">${u.username}</td>
-                        <td class="py-4 px-6 text-center font-mono text-slate-500">*** (Disembunyikan)</td>
-                        <td class="py-4 px-6 text-right">${actionBtn}</td>
-                    </tr>
-                `);
-            });
-        };
-
-        // Fungsi Admin memverifikasi investor
-        window.verifyInvestor = (username) => {
-            const user = window.dbUsers.find(u => u.username === username);
-            if (user) {
-                user.verified = true; // Mengubah status di database
-                window.showAlert(`SUKSES!\n\nAkun Investor milik ${user.name} (Paket Pendanaan Tier ${user.tier}) telah diverifikasi secara resmi. Beliau sekarang sudah dapat mengakses dashboard aplikasinya.`);
-                window.renderUserTable(); // Refresh tabel seketika
-            }
-        };
-
-        // --- MASTER KONTRAK / PROYEK (Hanya Admin) ---
-        window.renderProjectTable = () => {
-            const tbody = document.getElementById('table-projects-body');
-            tbody.innerHTML = '';
-            
-            window.dbProjects.forEach(p => {
-                // Hitung jumlah AC fisik yang tersambung di database IoT (Xtron)
-                const totalUnits = window.dbDevices.filter(d => d.projectId === p.id).length;
-                
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition-colors">
-                        <td class="py-5 px-6 font-black text-indigo-950 uppercase text-sm">${p.location}</td>
-                        <td class="py-5 px-6 font-bold text-slate-600">${p.custEmail}</td>
-                        <td class="py-5 px-6 text-center">
-                            <span class="bg-cyan-50 text-cyan-700 px-3 py-1.5 rounded-lg font-black text-[10px] border border-cyan-200 shadow-sm">${totalUnits} Unit Terpasang</span>
+                    <tr class="hover:bg-slate-700/30">
+                        <td class="py-3 px-4">
+                            <p class="font-bold text-white uppercase">${u.name}</p>
+                            <p class="text-[10px] text-slate-400">${u.username}</p>
                         </td>
-                        <td class="py-5 px-6 text-right font-mono font-black text-amber-600 text-sm">Rp ${(p.capex).toLocaleString('id-ID')}</td>
-                        <td class="py-5 px-6 text-right font-bold text-slate-500 bg-slate-50">${(p.baseline).toLocaleString('id-ID')} kWh</td>
+                        <td class="py-3 px-4"><span class="text-xs font-black text-indigo-400 uppercase tracking-widest">${u.role}</span><br>${statBadge}</td>
+                        <td class="py-3 px-4 text-center"><span class="font-bold text-amber-400">${tierText}</span></td>
+                        <td class="py-3 px-4 w-32">${btn}</td>
                     </tr>
                 `);
             });
-        };
+        }
 
-        window.openProjectModal = () => {
-            // Tarik data hanya orang dengan role 'Customer' untuk dimasukkan ke dropdown
-            const custSelect = document.getElementById('proj-cust');
-            const customerList = window.dbUsers.filter(u => u.role === 'customer');
-            
-            if(customerList.length === 0) {
-                return window.showAlert("Peringatan: Belum ada akun berstatus Customer di database. Silakan buat akun Customer terlebih dahulu di menu Master Pengguna.");
-            }
-            
-            custSelect.innerHTML = customerList.map(c => `<option value="${c.username}">${c.name} (${c.username})</option>`).join('');
-            
-            // Kosongkan form
-            document.getElementById('proj-loc').value = '';
-            document.getElementById('proj-capex').value = '50000000';
-            document.getElementById('proj-base').value = '2500';
-            document.getElementById('proj-ac-rows').innerHTML = '';
-            
-            // Otomatis buatkan 1 baris pertama kosong
-            window.addProjectACRow();
-            window.openModal('modal-project');
+        window.verifyUser = (id) => {
+            const u = dbUsers.find(x => x.id === id);
+            if(u) { u.verified = true; localStorage.setItem('ksa_users', JSON.stringify(dbUsers)); renderUsers(); }
         };
-
-        window.addProjectACRow = () => {
-            const area = document.getElementById('proj-ac-rows');
-            let options = '';
-            
-            // Merender opsi dropdown PK Super Lengkap
-            CAPACITIES.forEach(pk => {
-                // Pilih 1 PK sebagai default (selected)
-                let sel = pk === 1 ? 'selected' : '';
-                options += `<option value="${pk}" ${sel}>${pk} PK</option>`;
+        window.deleteUser = (id) => {
+            showConfirm("Yakin menghapus pengguna ini?", () => {
+                dbUsers = dbUsers.filter(x => x.id !== id);
+                localStorage.setItem('ksa_users', JSON.stringify(dbUsers));
+                renderUsers();
             });
-
-            // Pembuatan elemen HTML baris dinamis
-            const row = document.createElement('div');
-            row.className = 'flex flex-col md:flex-row gap-3 items-center bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100 shadow-sm';
-            row.innerHTML = `
-                <div class="flex-1 w-full space-y-1">
-                    <label class="text-[9px] font-black text-slate-400 uppercase px-2">Merk / Model Unit</label>
-                    <input type="text" class="ac-merk w-full bg-white border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 font-bold text-xs outline-none" placeholder="Misal: Daikin Inverter Standar">
-                </div>
-                <div class="w-full md:w-32 space-y-1">
-                    <label class="text-[9px] font-black text-slate-400 uppercase px-2">Kapasitas</label>
-                    <select class="ac-pk w-full bg-white border border-slate-200 focus:border-indigo-500 rounded-xl px-2 py-3 font-bold text-xs outline-none cursor-pointer">
-                        ${options}
-                    </select>
-                </div>
-                <div class="flex-1 w-full space-y-1">
-                    <label class="text-[9px] font-black text-slate-400 uppercase px-2">MAC Address (IoT Bind)</label>
-                    <input type="text" class="ac-mac font-mono text-cyan-700 w-full bg-white border border-slate-200 focus:border-cyan-500 rounded-xl px-4 py-3 font-bold text-xs uppercase outline-none" placeholder="MAC-A1:B2:C3...">
-                </div>
-                <div class="pt-4 md:pt-4 self-end md:self-auto w-full md:w-auto">
-                    <button onclick="this.parentElement.parentElement.remove();" class="w-full md:w-auto text-red-500 hover:text-white bg-red-50 hover:bg-red-500 p-3 rounded-xl transition-colors shadow-sm" title="Hapus Baris Ini">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            `;
-            area.appendChild(row);
         };
 
-        window.saveProject = () => {
-            const loc = document.getElementById('proj-loc').value.trim();
-            const cust = document.getElementById('proj-cust').value;
-            const capex = parseInt(document.getElementById('proj-capex').value);
-            const base = parseInt(document.getElementById('proj-base').value);
-            
-            if(!loc) return window.showAlert("ERROR: Nama gedung atau lokasi wajib diisi agar tagihan valid.");
+        function renderProjects() {
+            const tbody = document.getElementById('projects-tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
 
-            // Buat ID unik berdasarkan timestamp
-            const prjId = 'PRJ-' + Date.now();
-            
-            // Simpan data Finansial ke Tabel Proyek
-            window.dbProjects.push({ id: prjId, location: loc, custEmail: cust, capex: capex, baseline: base });
+            dbProjects.forEach(p => {
+                const c = dbUsers.find(u => u.id === p.custId) || {};
+                const i = dbUsers.find(u => u.id === p.invId) || {};
+                const acs = dbDevices.filter(d => d.projectId === p.id);
 
-            // Proses input AC untuk dikonversi menjadi Node Hardware IoT
-            const rows = document.querySelectorAll('#proj-ac-rows > div');
-            
-            // Validasi apakah ada baris yang kosong
-            let hasAC = false;
-            rows.forEach(r => {
-                const merk = r.querySelector('.ac-merk').value || "AC Standard";
-                const pk = parseFloat(r.querySelector('.ac-pk').value);
-                let mac = r.querySelector('.ac-mac').value.toUpperCase().trim();
-                
-                // Jika Admin malas isi MAC, sistem auto-generate MAC virtual (Untuk keperluan simulasi)
-                if(!mac) mac = 'V-MAC-' + Math.floor(Math.random()*1000000); 
-
-                // Suntik ke dalam Tabel Data Center IoT (Xtron)
-                window.dbDevices.push({
-                    id: mac,
-                    projectId: prjId,
-                    name: merk,
-                    pk: pk,
-                    kwh: 0, // Dimulai dari meteran 0
-                    power: true, // Mesin hidup
-                    temp: 24 // Suhu ideal default
-                });
-                hasAC = true;
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="hover:bg-slate-700/30">
+                        <td class="py-3 px-4 font-black uppercase text-white">${p.location}</td>
+                        <td class="py-3 px-4 text-xs text-slate-300">${c.name||'-'}</td>
+                        <td class="py-3 px-4 text-xs text-slate-300">${i.name||'-'}</td>
+                        <td class="py-3 px-4 text-right font-bold text-cyan-400">${acs.length} Unit</td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-400">${formatKwh(p.baseline)}</td>
+                        <td class="py-3 px-4 text-center"><button onclick="deleteProject('${p.id}')" class="text-red-400 hover:text-red-300"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `);
             });
+            updateProjectSelector();
+        }
 
-            if(!hasAC) {
-                // Jika tidak ada AC, buat minimal 1 AC dummy agar dashboard jalan
-                window.dbDevices.push({ id: 'V-MAC-DEFAULT', projectId: prjId, name: 'AC Ruang Utama', pk: 1, kwh: 0, power: true, temp: 24 });
-            }
-
-            window.closeModal('modal-project');
-            window.showAlert("Proyek Finansial berhasil dibuat!\nSistem Database (Xtron IoT) secara otomatis telah diinisialisasi untuk menghubungkan hardware AC ke gedung tersebut.");
-            
-            // Refresh layar Admin agar tabel nampak
-            window.renderProjectTable();
+        window.deleteProject = (id) => {
+            showConfirm("Menghapus proyek akan menghapus semua AC IoT di dalamnya. Lanjutkan?", () => {
+                dbProjects = dbProjects.filter(x => x.id !== id);
+                dbDevices = dbDevices.filter(x => x.projectId !== id);
+                localStorage.setItem('ksa_projects', JSON.stringify(dbProjects));
+                localStorage.setItem('ksa_devices', JSON.stringify(dbDevices));
+                renderProjects();
+                if(activeProject && activeProject.id === id) { activeProject = null; renderFinance(); }
+            });
         };
 
-        // --- PUSAT KENDALI IOT (Manajemen Perangkat Keras) ---
-        window.populateIoTProjectDropdown = () => {
-            const select = document.getElementById('iot-project-select');
-            const btnAdd = document.getElementById('btn-add-iot');
+        function updateProjectSelector() {
+            const sel = document.getElementById('proj-select');
+            if(!sel) return;
             
-            // Keamanan Hak Akses: Filter proyek
-            let myProjs = [];
-            if(window.activeUser.role === 'admin') {
-                myProjs = window.dbProjects; // Admin lihat isi semua gedung se-Indonesia
-                btnAdd.classList.remove('hidden-el'); // Admin berhak mencolokkan hardware baru
-            } else if(window.activeUser.role === 'customer') {
-                myProjs = window.dbProjects.filter(p => p.custEmail === window.activeUser.username); // Customer cuma lihat gedungnya
-                btnAdd.classList.add('hidden-el'); // Customer dilarang mencolok hardware sendiri
+            let projs = [];
+            if(activeUser.role === 'admin') projs = dbProjects;
+            else if(activeUser.role === 'customer') projs = dbProjects.filter(p => p.custId === activeUser.id);
+            else if(activeUser.role === 'investor') projs = dbProjects.filter(p => p.invId === activeUser.id);
+
+            sel.innerHTML = projs.map(p => `<option value="${p.id}">${p.location}</option>`).join('');
+            
+            if(projs.length > 0) {
+                if(!activeProject || !projs.find(p => p.id === activeProject.id)) activeProject = projs[0];
+                sel.value = activeProject.id;
             } else {
-                // Peran lain (Investor) tidak berhak merubah AC, hanya lihat saja
-                myProjs = window.dbProjects; // Tapi karena PoC, kita izinkan lihat semuanya
-                btnAdd.classList.add('hidden-el');
+                activeProject = null;
             }
+        }
 
-            // Isi Dropdown
-            select.innerHTML = myProjs.map(p => `<option value="${p.id}">${p.location} (ID: ${p.id})</option>`).join('');
-            
-            // Render AC Card berdasarkan gedung pertama yang terpilih
-            if(myProjs.length > 0) window.renderIoTPanel();
-            else {
-                document.getElementById('iot-grid').innerHTML = '';
-                document.getElementById('iot-empty-msg').classList.remove('hidden-el');
-            }
+        window.changeActiveProject = (id) => {
+            activeProject = dbProjects.find(p => p.id === id);
+            if(document.getElementById('view-dashboard').classList.contains('hidden-el') === false) renderFinance();
+            if(document.getElementById('view-iot').classList.contains('hidden-el') === false) renderIoT();
         };
 
-        window.renderIoTPanel = () => {
-            const select = document.getElementById('iot-project-select');
-            if(!select.value) return;
-
-            // Sembunyikan pesan kosong
-            document.getElementById('iot-empty-msg').classList.add('hidden-el');
-            const grid = document.getElementById('iot-grid');
-            grid.innerHTML = '';
-
-            // Cari semua hardware fisik yang "dicolokkan" ke Project ID ini
-            const projectDevices = window.dbDevices.filter(d => d.projectId === select.value);
+        // RUMUS FINANSIAL UTAMA
+        function calculateFinance() {
+            if(!activeProject) return null;
             
-            if(projectDevices.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm"><p class="text-slate-400 font-bold uppercase tracking-widest text-sm">Belum ada Node IoT terpasang di lokasi ini.</p></div>';
+            const acs = dbDevices.filter(d => d.projectId === activeProject.id);
+            let totalActualKwh = 0;
+            acs.forEach(a => totalActualKwh += (a.baseData || 0));
+
+            // Rumus KSA:
+            const baselineKwh = activeProject.baseline;
+            const savingKwh = Math.max(0, baselineKwh - totalActualKwh);
+            const savingRp = savingKwh * TARIF_KWH;
+
+            const hakCustomer = savingRp * 0.3; // 30%
+            const tagihanKsaGross = savingRp * 0.7; // 70%
+
+            const feeInvestor = tagihanKsaGross * 0.6; // 60% dari 70%
+            const labaKsaNet = tagihanKsaGross * 0.4; // 40% dari 70%
+
+            return { baselineKwh, totalActualKwh, savingRp, tagihanKsaGross, feeInvestor, labaKsaNet, hakCustomer };
+        }
+
+        function renderFinance() {
+            updateProjectSelector();
+            const emptyMsg = document.getElementById('empty-project-msg');
+            const matrix = document.getElementById('finance-matrix');
+            const selectorBox = document.getElementById('project-selector-box');
+            
+            if(activeUser.role === 'investor') selectorBox.classList.add('hidden-el');
+            else selectorBox.classList.remove('hidden-el');
+
+            if(!activeProject) {
+                emptyMsg.classList.remove('hidden-el');
+                matrix.classList.add('hidden-el');
                 return;
             }
+            emptyMsg.classList.add('hidden-el');
+            matrix.classList.remove('hidden-el');
 
-            // Looping merender setiap mesin AC menjadi Kartu (Card) Visual
-            projectDevices.forEach(d => {
-                // Logika pembatasan tombol kontrol. Jika Investor yang lihat, mereka cuma boleh nonton (disabled)
-                const isReadOnly = (window.activeUser.role !== 'admin' && window.activeUser.role !== 'customer');
+            const cust = dbUsers.find(u => u.id === activeProject.custId) || {};
+            document.getElementById('dash-loc-name').innerText = activeProject.location;
+            document.getElementById('dash-cust-email').innerText = `Customer: ${cust.name || '-'}`;
+
+            const metrics = calculateFinance();
+            
+            document.getElementById('dash-saving').innerText = formatRp(metrics.savingRp);
+            document.getElementById('dash-tagihan').innerText = formatRp(metrics.tagihanKsaGross);
+            document.getElementById('dash-investor').innerText = formatRp(metrics.feeInvestor);
+            document.getElementById('dash-ksa').innerText = formatRp(metrics.labaKsaNet);
+
+            document.getElementById('dash-base-kwh').innerText = formatKwh(metrics.baselineKwh) + " kWh";
+            document.getElementById('dash-actual-kwh').innerText = formatKwh(metrics.totalActualKwh) + " kWh";
+            
+            const p = Math.min((metrics.totalActualKwh / (metrics.baselineKwh || 1)) * 100, 100);
+            const bar = document.getElementById('dash-bar-kwh');
+            if(bar) bar.style.width = p + '%';
+            
+            const panelKhusus = document.getElementById('panel-khusus-role');
+            if(activeUser.role === 'customer') {
+                panelKhusus.classList.remove('hidden-el');
+                panelKhusus.innerHTML = `<p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Porsi Penghematan Anda (30%)</p><p class="text-3xl font-black text-white mono">${formatRp(metrics.hakCustomer)}</p>`;
+            } else if (activeUser.role === 'investor') {
+                panelKhusus.classList.remove('hidden-el');
+                panelKhusus.innerHTML = `<p class="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Hak Dividen Anda (60% dr Tagihan KSA)</p><p class="text-3xl font-black text-white mono">${formatRp(metrics.feeInvestor)}</p>`;
+            } else {
+                panelKhusus.classList.add('hidden-el');
+            }
+        }
+
+        function showModalAc() {
+            if(!activeProject) return showAlert("Pilih atau Buat Proyek terlebih dahulu di Dashboard.");
+            document.getElementById('ac-mac').value = '';
+            document.getElementById('ac-name').value = '';
+            uiModal('modal-ac', true);
+        }
+
+        window.saveNodeAc = () => {
+            const mac = cleanStr(document.getElementById('ac-mac').value).toUpperCase().replace(/\s/g, '-');
+            const name = cleanStr(document.getElementById('ac-name').value);
+            const pk = parseFloat(document.getElementById('ac-pk').value);
+
+            if(!mac || !name) return showAlert("MAC dan Nama harus diisi!");
+            if(dbDevices.find(d => d.id === mac)) return showAlert("MAC Address sudah dipakai!");
+
+            dbDevices.push({
+                id: mac, projectId: activeProject.id, ownerId: activeProject.custId,
+                name: name, location: activeProject.location, pk: pk,
+                baseline: ((pk * RUMUS_WATT_PER_PK)/1000) * ASUMSI_JAM_BULAN,
+                baseData: 0, power: true, temp: 24, status: 'online'
+            });
+            localStorage.setItem('ksa_devices', JSON.stringify(dbDevices));
+            closeModal('modal-ac');
+            renderIoT();
+        };
+
+        function renderIoT() {
+            const grid = document.getElementById('iot-grid');
+            const msg = document.getElementById('iot-empty-msg');
+            const btnAdd = document.getElementById('btn-add-ac');
+
+            if(activeUser.role === 'admin') btnAdd.classList.remove('hidden-el');
+            else btnAdd.classList.add('hidden-el');
+
+            grid.innerHTML = '';
+            if(!activeProject) { msg.classList.remove('hidden-el'); return; }
+            
+            const myACs = dbDevices.filter(d => d.projectId === activeProject.id);
+            if(myACs.length === 0) { msg.classList.remove('hidden-el'); return; }
+            
+            msg.classList.add('hidden-el');
+            const canControl = activeUser.role === 'admin' || activeUser.role === 'customer';
+
+            myACs.forEach(device => {
+                const isOff = !device.power;
+                const percent = Math.min((device.baseData / (device.baseline||1)) * 100, 100);
+                let barColor = 'from-emerald-400 to-emerald-500';
+                if(percent > 60) barColor = 'from-amber-400 to-amber-500';
+                if(percent > 90) barColor = 'from-red-500 to-red-600';
+
+                const tempBtnClass = (!isOff && canControl) ? 'text-slate-300 hover:text-white hover:bg-slate-600' : 'text-slate-600 cursor-not-allowed';
 
                 grid.insertAdjacentHTML('beforeend', `
-                    <div class="bg-slate-800 rounded-[2rem] p-6 border ${d.power ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-500' : 'border-slate-700 opacity-90'} flex flex-col justify-between transition-all relative overflow-hidden group hover:scale-[1.02]">
-                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
+                    <div class="bg-slate-800 rounded-3xl p-6 border ${isOff ? 'border-slate-700 opacity-80' : 'border-cyan-500/30 shadow-lg shadow-cyan-500/10'} flex flex-col justify-between transition-all relative overflow-hidden">
+                        ${!isOff ? `<div class="absolute -top-10 -right-10 w-24 h-24 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none"></div>` : ''}
                         
-                        <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div class="flex justify-between items-start mb-6">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-3 h-3 rounded-full ${d.power ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'} shadow-md"></span>
-                                    <h4 class="font-black text-slate-100 uppercase tracking-tight">${d.name}</h4>
+                                    <span class="w-2.5 h-2.5 rounded-full ${isOff ? 'bg-red-500' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]'}"></span>
+                                    <h4 class="font-black text-white uppercase tracking-tight truncate max-w-[180px]">${device.name}</h4>
                                 </div>
-                                <p class="text-[10px] text-cyan-400 font-mono tracking-widest bg-cyan-950 px-2 py-0.5 rounded w-fit border border-cyan-800">${d.id}</p>
+                                <p class="text-[10px] text-cyan-400 font-mono font-bold tracking-widest">MAC: ${device.id}</p>
+                                <p class="text-xs text-slate-400 mt-1">${device.pk} PK • ${device.location}</p>
                             </div>
-                            <span class="text-xs font-black text-slate-500 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700 shadow-inner">${d.pk} PK</span>
                         </div>
                         
-                        <div class="my-6 relative z-10 bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Live Meteran Listrik </span>
-                            <div class="flex items-end gap-1">
-                                <span class="text-5xl font-black text-white mono transition-all duration-300 drop-shadow-md" id="kwh-display-${d.id}">${(d.kwh).toLocaleString('id-ID')}</span>
-                                <span class="text-sm font-bold text-cyan-600 mb-1">kWh</span>
+                        <div class="mb-6">
+                            <div class="flex justify-between items-end mb-2">
+                                <div>
+                                    <span class="text-3xl font-black text-white font-mono">${formatKwh(device.baseData)}</span>
+                                    <span class="text-xs font-bold text-slate-500 ml-1 uppercase">kWh</span>
+                                </div>
+                                <span class="text-[10px] font-black uppercase tracking-widest ${isOff ? 'text-slate-600' : 'text-cyan-400'}">${isOff ? 'OFF' : 'ON'}</span>
+                            </div>
+                            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden shadow-inner">
+                                <div class="bg-gradient-to-r ${barColor} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
                             </div>
                         </div>
 
-                        <div class="pt-4 border-t border-slate-700 flex justify-between items-center relative z-10">
-                            <button onclick="window.toggleIotPower('${d.id}')" ${isReadOnly ? 'disabled' : ''} class="px-4 py-3 rounded-xl ${d.power ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40 border border-emerald-500/30'} transition-all font-bold text-xs uppercase flex items-center gap-2 shadow-sm ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}">
-                                <i class="fas fa-power-off text-base"></i> ${d.power ? 'Turn Off' : 'Turn On'}
+                        <!-- Remote Control -->
+                        <div class="pt-5 border-t border-slate-700/50 flex justify-between items-center bg-slate-800 z-10">
+                            <button onclick="togglePower('${device.id}')" ${canControl ? '' : 'disabled'} class="w-12 h-12 flex items-center justify-center rounded-2xl ${isOff ? 'bg-slate-700 text-slate-400 hover:text-red-400' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-inner'} transition-all disabled:opacity-50">
+                                <i class="fas fa-power-off"></i>
                             </button>
                             
-                            <div class="flex items-center gap-1 bg-slate-900 rounded-xl p-1.5 border border-slate-700 shadow-inner">
-                                <button onclick="window.changeIotTemp('${d.id}', -1)" ${isReadOnly || !d.power ? 'disabled' : ''} class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${d.power && !isReadOnly ? 'text-cyan-400 bg-slate-800 hover:bg-slate-700 shadow-sm' : 'text-slate-700 cursor-not-allowed'}"><i class="fas fa-minus"></i></button>
-                                <span class="text-2xl font-black font-mono ${d.power ? 'text-white' : 'text-slate-600'} w-10 text-center drop-shadow-md">${d.temp}°</span>
-                                <button onclick="window.changeIotTemp('${d.id}', 1)" ${isReadOnly || !d.power ? 'disabled' : ''} class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${d.power && !isReadOnly ? 'text-red-400 bg-slate-800 hover:bg-slate-700 shadow-sm' : 'text-slate-700 cursor-not-allowed'}"><i class="fas fa-plus"></i></button>
+                            <div class="flex items-center gap-2 bg-slate-900 rounded-2xl p-1.5 border border-slate-700">
+                                <button onclick="changeTemp('${device.id}', -1)" class="w-9 h-9 flex items-center justify-center rounded-xl ${tempBtnClass} transition-colors" ${isOff || !canControl ? 'disabled' : ''}><i class="fas fa-minus"></i></button>
+                                <div class="w-10 text-center"><span class="text-lg font-black font-mono ${isOff ? 'text-slate-600' : 'text-white'}">${device.temp}°</span></div>
+                                <button onclick="changeTemp('${device.id}', 1)" class="w-9 h-9 flex items-center justify-center rounded-xl ${tempBtnClass} transition-colors" ${isOff || !canControl ? 'disabled' : ''}><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
                     </div>
                 `);
             });
+        }
+
+        window.togglePower = (id) => {
+            const d = dbDevices.find(x => x.id === id);
+            if(d) { d.power = !d.power; localStorage.setItem('ksa_devices', JSON.stringify(dbDevices)); renderIoT(); }
         };
 
-        // Fungsi Aksi API IOT (Mengubah Status)
-        window.toggleIotPower = (id) => {
-            const dev = window.dbDevices.find(d => d.id === id);
-            if(dev) { 
-                dev.power = !dev.power; 
-                window.renderIoTPanel(); // Refresh tampilan kartu AC
-                window.renderDashboard(); // Trigger update tagihan karena konsumsi terhenti
-            }
-        };
-        
-        window.changeIotTemp = (id, delta) => {
-            const dev = window.dbDevices.find(d => d.id === id);
-            if(dev && dev.power) { 
-                let newTemp = dev.temp + delta; 
-                // Mengunci pengaturan remote AC agar tidak di luar batas wajar (16C - 30C)
-                if(newTemp >= 16 && newTemp <= 30) { 
-                    dev.temp = newTemp; 
-                    window.renderIoTPanel(); 
-                } 
+        window.changeTemp = (id, delta) => {
+            const d = dbDevices.find(x => x.id === id);
+            if(d && d.power) {
+                let t = d.temp + delta;
+                if(t >= 16 && t <= 30) { d.temp = t; localStorage.setItem('ksa_devices', JSON.stringify(dbDevices)); renderIoT(); }
             }
         };
 
-        // Modal Input Hardware IOT Susulan (Oleh Admin)
-        window.openAddIoTModal = () => {
-            document.getElementById('iot-name').value = '';
-            document.getElementById('iot-mac').value = '';
-            // Merender opsi PK lagi (menggunakan array konstan kita)
-            const sel = document.getElementById('iot-pk');
-            sel.innerHTML = CAPACITIES.map(pk => `<option value="${pk}" ${pk===1 ? 'selected' : ''}>${pk} PK</option>`).join('');
-            
-            window.openModal('modal-iot');
-        };
-
-        window.saveNodeIoT = () => {
-            const projId = document.getElementById('iot-project-select').value;
-            const name = document.getElementById('iot-name').value.trim();
-            const mac = document.getElementById('iot-mac').value.trim().toUpperCase();
-            const pk = parseFloat(document.getElementById('iot-pk').value);
-            
-            if(!name || !mac || !projId) return window.showAlert("DATA KOSONG: Mohon isi data MAC Address dan Nama Alat dengan lengkap!");
-
-            // Menyimpan hardware baru ke sistem
-            window.dbDevices.push({ id: mac, projectId: projId, name: name, pk: pk, kwh: 0, power: true, temp: 24 });
-            
-            window.closeModal('modal-iot');
-            window.showAlert(`Hardware AC (${pk} PK) dengan MAC ${mac} berhasil dipasangkan (binding) ke server!`);
-            window.renderIoTPanel();
-            window.renderDashboard(); // Update Dashboard Finansial agar unit baru tercatat di tabel
-        };
-
-        // --- DASHBOARD FINANSIAL (Engine Penagihan Otomatis) ---
-        window.renderDashboard = () => {
-            let myProjs = [];
-            // Penyaringan (Filter) Level Database
-            if(window.activeUser.role === 'admin') {
-                myProjs = window.dbProjects; // Admin tarik semua data
-            } else if (window.activeUser.role === 'customer') {
-                myProjs = window.dbProjects.filter(p => p.custEmail === window.activeUser.username); // Customer tarik datanya sendiri
+        // ENGINE SIMULATOR (Live Data Injection)
+        function toggleSimulator(isActive) {
+            if(isActive) {
+                simulatorInterval = setInterval(() => {
+                    let updated = false;
+                    dbDevices.forEach(d => {
+                        if(d.power) {
+                            updated = true;
+                            const boost = (30 - d.temp) * 0.1; // Makin dingin makin boros
+                            d.baseData += (Math.random() * 2 + boost);
+                        }
+                    });
+                    if(updated) {
+                        localStorage.setItem('ksa_devices', JSON.stringify(dbDevices));
+                        if(document.getElementById('view-iot').classList.contains('hidden-el') === false) renderIoT();
+                        if(document.getElementById('view-dashboard').classList.contains('hidden-el') === false) renderFinance();
+                    }
+                }, 3000);
             } else {
-                myProjs = window.dbProjects; // Karena ini PoC, Investor kita perbolehkan lihat semua proyek
+                clearInterval(simulatorInterval);
             }
+        }
 
-            // Variabel Kantong Uang (Akumulator)
-            let globalSaving = 0;
-            let globalGross = 0;
-            let globalCust = 0;
-            let globalKsa = 0;
-            let globalInv = 0;
-
-            const tbody = document.getElementById('table-dash-body');
-            tbody.innerHTML = '';
-
-            if (myProjs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-xs">Belum ada kontrak finansial berjalan.</td></tr>`;
-                document.getElementById('dash-val-saving').innerText = 'Rp 0';
-                document.getElementById('dash-val-gross').innerText = 'Rp 0';
-                document.getElementById('dash-val-ksa').innerText = 'Rp 0';
-                const invEl = document.getElementById('dash-val-inv');
-                if(invEl) invEl.innerText = 'Rp 0';
-                return;
-            }
-
-            myProjs.forEach(p => {
-                // Proses Tarik Data (Sum) IoT per Proyek
-                const devs = window.dbDevices.filter(d => d.projectId === p.id);
-                const totalKwh = devs.reduce((sum, d) => sum + d.kwh, 0);
-                
-                // --- INTI KALKULATOR BISNIS KSA ---
-                // 1. Tentukan Nilai Standard Kapasitas AC (Tanpa Xtron)
-                const biayaNormal = p.baseline * TARIF_PLN;
-                
-                // 2. Pemakaian Aktual IOT
-                const biayaAktual = totalKwh * TARIF_PLN;
-                
-                // 3. Nilai Penghematan (Standard - Aktual)
-                const grossSaving = Math.max(0, biayaNormal - biayaAktual); 
-                
-                // 4. Pembagian Penghematan (Customer vs KSA)
-                const porsiCustomer = grossSaving * 0.3; // Customer mengantongi 30% dari penghematan
-                const tagihanTotal = grossSaving * 0.7; // KSA menagihkan 70% dari penghematan
-                
-                // 5. Pembagian Hasil Tagihan KSA (Investor 60% vs Perusahaan 40%)
-                const porsiInvestor = tagihanTotal * 0.6;
-                const porsiKSA = tagihanTotal * 0.4; 
-
-                // Akumulasikan ke kantong global untuk ditampilkan di panel atas
-                globalSaving += grossSaving;
-                globalGross += tagihanTotal;
-                globalCust += porsiCustomer;
-                globalKsa += porsiKSA;
-                globalInv += porsiInvestor;
-
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors text-xs">
-                        <td class="py-4 px-6 font-black text-indigo-950 uppercase leading-tight">
-                            ${p.location}
-                            <span class="block text-[9px] text-slate-400 mt-1 font-mono tracking-widest">ID: ${p.id}</span>
-                        </td>
-                        <td class="py-4 px-6 text-right font-bold text-slate-500">
-                            <span class="mono">${(p.baseline).toLocaleString('id-ID')} kWh</span><br>
-                            <span class="text-[9px]">Rp ${(biayaNormal).toLocaleString('id-ID')}</span>
-                        </td>
-                        <td class="py-4 px-6 text-right font-black text-cyan-700 bg-cyan-50/50">
-                            <span class="mono">${totalKwh.toLocaleString('id-ID')} kWh</span><br>
-                            <span class="text-[9px]">Rp ${(biayaAktual).toLocaleString('id-ID')}</span>
-                        </td>
-                        <td class="py-4 px-6 text-right font-black text-emerald-600 bg-emerald-50/50 text-sm drop-shadow-sm">Rp ${grossSaving.toLocaleString('id-ID')}</td>
-                        <td class="py-4 px-6 text-right font-bold text-slate-600 text-sm">Rp ${porsiCustomer.toLocaleString('id-ID')}</td>
-                        <td class="py-4 px-6 text-right font-black text-indigo-700 bg-indigo-50/50 text-sm drop-shadow-sm">Rp ${tagihanTotal.toLocaleString('id-ID')}</td>
-                        <td class="py-4 px-6 text-right font-black text-amber-600 text-sm drop-shadow-sm">Rp ${porsiInvestor.toLocaleString('id-ID')}</td>
-                        <td class="py-4 px-6 text-right font-black text-emerald-800 text-sm drop-shadow-sm">Rp ${porsiKSA.toLocaleString('id-ID')}</td>
-                    </tr>
+        function renderChatContacts() {
+            const list = document.getElementById('contact-list');
+            if(!list) return;
+            list.innerHTML = '';
+            
+            const users = dbUsers.filter(u => u.role !== 'admin');
+            users.forEach(u => {
+                list.insertAdjacentHTML('beforeend', `
+                    <div onclick="openChat('${u.id}')" class="p-4 rounded-xl cursor-pointer hover:bg-slate-700 border border-transparent hover:border-slate-600 transition-all flex items-center gap-3">
+                        <div class="h-10 w-10 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center font-bold">${u.name.charAt(0)}</div>
+                        <div>
+                            <p class="text-sm font-bold text-white uppercase">${u.name}</p>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-widest">${u.role}</p>
+                        </div>
+                    </div>
                 `);
             });
+            if(users.length > 0) openChat(users[0].id);
+        }
 
-            // Update Angka di Panel Raksasa Atas secara Live
-            const elSaving = document.getElementById('dash-val-saving');
-            if(elSaving) elSaving.innerText = 'Rp ' + globalSaving.toLocaleString('id-ID');
-            document.getElementById('dash-val-gross').innerText = 'Rp ' + globalGross.toLocaleString('id-ID');
-            document.getElementById('dash-val-ksa').innerText = 'Rp ' + globalKsa.toLocaleString('id-ID');
-            const invEl = document.getElementById('dash-val-inv');
-            if(invEl) invEl.innerText = 'Rp ' + globalInv.toLocaleString('id-ID');
+        let activeChatId = null;
+        window.openChat = (uid) => {
+            activeChatId = uid;
+            const target = dbUsers.find(u => u.id === uid) || { name: 'Support KSA', role: 'Layanan' };
+            document.getElementById('chat-active-name').innerText = target.name;
+            document.getElementById('chat-active-role').innerText = target.role;
+            renderChatMessages();
         };
 
-        // FUNGSI PENCETAKAN INVOICE KHUSUS
-        window.generateAndPrintInvoice = (projectId, totalNominal) => {
-            const proj = window.dbProjects.find(p => p.id === projectId);
-            if(!proj) return;
-            
-            // Menyuntikkan data spesifik proyek ke dalam kerangka Invoice PDF
-            const invContainer = document.getElementById('invoice-print-area');
-            invContainer.innerHTML = `
-                <div class="max-w-4xl mx-auto border-4 border-slate-900 p-12 relative bg-white">
-                    <div class="border-b-4 border-indigo-950 pb-6 mb-8 flex justify-between items-end">
-                        <div>
-                            <h1 class="text-5xl font-black italic uppercase tracking-tighter text-indigo-950 leading-none">KSA</h1>
-                            <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.2em] mt-3">Smart Energy Financing</p>
+        window.renderChatMessages = () => {
+            const box = document.getElementById('chat-messages');
+            box.innerHTML = '';
+            if(!activeChatId) return;
+
+            let msgs = [];
+            if(activeUser.role === 'admin') msgs = dbChats.filter(m => m.sender === activeChatId || m.receiver === activeChatId);
+            else msgs = dbChats.filter(m => m.sender === activeUser.id || m.receiver === activeUser.id);
+
+            if(msgs.length === 0) { box.innerHTML = '<p class="text-slate-500 text-xs italic text-center mt-10">Mulai percakapan baru...</p>'; return; }
+
+            msgs.forEach(m => {
+                const isMe = m.sender === activeUser.id || (activeUser.role==='admin' && m.sender==='admin');
+                box.insertAdjacentHTML('beforeend', `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                        <div class="${isMe ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-200 border border-slate-600'} rounded-2xl px-5 py-3 max-w-[75%] shadow-sm">
+                            <p class="text-sm">${m.text}</p>
                         </div>
-                        <div class="text-right">
-                            <h2 class="text-4xl font-black text-slate-800 uppercase tracking-widest mb-2">OFFICIAL INVOICE</h2>
-                            <p class="text-base font-bold text-slate-600">Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
-                            <p class="text-base font-bold text-slate-600">No. Ref: <span class="mono text-indigo-700">INV-${Date.now().toString().slice(-6)}-${proj.id.slice(-4)}</span></p>
-                        </div>
                     </div>
-                    
-                    <div class="mb-10 p-6 bg-slate-50 border-2 border-slate-200 rounded-2xl w-2/3">
-                        <p class="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-2">Tagihan Ditujukan Kepada:</p>
-                        <p class="text-2xl font-black text-slate-900 uppercase leading-none mb-1">${proj.custEmail}</p>
-                        <p class="text-sm font-bold text-slate-600 uppercase mt-2"><i class="fas fa-building mr-2 text-slate-400"></i> ${proj.location}</p>
-                    </div>
-
-                    <table class="w-full text-left border-collapse border-2 border-slate-900 mb-10">
-                        <thead class="bg-slate-900 text-white">
-                            <tr>
-                                <th class="py-4 px-6 font-bold uppercase tracking-widest">Deskripsi Layanan / Periode IoT</th>
-                                <th class="py-4 px-6 font-bold uppercase tracking-widest text-right">Nilai Tagihan (IDR)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y-2 divide-slate-200">
-                            <tr>
-                                <td class="py-6 px-6 text-lg font-bold text-slate-700">Tagihan Bagi Hasil (Revenue Split) Airtron / IoT<br><span class="text-sm text-slate-500 font-normal mt-1 block">Berdasarkan data tarikan sensor IoT real-time.</span></td>
-                                <td class="py-6 px-6 text-right text-3xl font-black text-slate-900 mono">Rp ${totalNominal.toLocaleString('id-ID')}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="border-t-4 border-slate-200 pt-8 mt-16 text-center">
-                        <p class="text-2xl font-black text-slate-800 uppercase italic">TERIMA KASIH ATAS KERJASAMA ANDA</p>
-                        <p class="text-sm font-bold text-slate-500 mt-2">Tagihan ini dicetak sah oleh Sistem Komputerisasi KSA Enterprise.</p>
-                    </div>
-                </div>
-            `;
-            
-            // Panggil API Print Browser
-            window.print();
-        };
-
-        // --- SIMULATOR ENGINE (Bypass API Fisik) ---
-        // Karena ini adalah Super App Standalone, agar Anda dapat presentasi tanpa perlu membawa hardware fisik (ESP32),
-        // saya menyertakan loop setInterval. Setiap 3 detik, fungsi ini "berpura-pura" menerima data baru dari alat listrik.
-        setInterval(() => {
-            if(!window.activeUser) return;
-            // Cek apakah Saklar Simulator di Header dinyalakan oleh Admin
-            const isSimOn = document.getElementById('simulator-toggle').checked;
-            if(!isSimOn) return;
-
-            let isDataChanged = false;
-
-            window.dbDevices.forEach(d => {
-                // Logika Listrik Nyata: Jika AC menyala (power = true), meteran jalan.
-                if(d.power) {
-                    // Beban listrik (Watt) dipengaruhi langsung oleh besaran PK AC
-                    const baseConsumption = d.pk * 1.5; 
-                    // Logika Termodinamika: Jika suhu disetel sangat dingin (misal 16 derajat), kompresor bekerja lebih ekstra dan boros listrik
-                    const tempFactor = (30 - d.temp) * 0.4; 
-                    
-                    // Update ke dalam database lokal
-                    d.kwh += Math.round(baseConsumption + tempFactor);
-                    isDataChanged = true;
-                    
-                    // Jika layar Pusat Kendali IoT sedang terbuka, update tampilan visual digit angka kWh nya
-                    const el = document.getElementById(`kwh-display-${d.id}`);
-                    if(el) {
-                        el.innerText = d.kwh.toLocaleString('id-ID');
-                        // Berikan efek flash kuning sebentar untuk menandakan ada listrik masuk
-                        el.classList.add('text-amber-400');
-                        setTimeout(() => el.classList.remove('text-amber-400'), 500);
-                    }
-                }
+                `);
             });
+            box.scrollTop = box.scrollHeight;
+        };
 
-            // Sihir Otomatisasinya di sini: Jika ada listrik yang dipakai, otomatis perhitungan uang di modul Finansial dihitung ulang detik itu juga!
-            if(isDataChanged && !document.getElementById('view-dashboard').classList.contains('hidden-el')) {
-                window.renderDashboard(); 
-            }
-        }, 3000); // Trigger otomatis jalan setiap 3 detik
+        window.sendChatMessage = () => {
+            const inp = document.getElementById('chat-input');
+            const txt = cleanStr(inp.value);
+            if(!txt || (!activeChatId && activeUser.role==='admin')) return;
+
+            const receiver = activeUser.role === 'admin' ? activeChatId : 'admin';
+            dbChats.push({ id: Date.now(), sender: activeUser.role==='admin'?'admin':activeUser.id, receiver: receiver, text: txt });
+            localStorage.setItem('ksa_chats', JSON.stringify(dbChats));
+            inp.value = '';
+            renderChatMessages();
+        };
+
+        window.printInvoice = () => {
+            if(!activeProject) return;
+            const metrics = calculateFinance();
+            const cust = dbUsers.find(u => u.id === activeProject.custId) || {};
+
+            document.getElementById('inv-date').innerText = "Tanggal: " + new Date().toLocaleDateString('id-ID');
+            document.getElementById('inv-number').innerText = "INV/KSA/" + Date.now().toString().slice(-6);
+            document.getElementById('inv-cust-name').innerText = cust.name || '-';
+            document.getElementById('inv-cust-loc').innerText = activeProject.location;
+
+            document.getElementById('inv-val-normal').innerText = formatRp(metrics.baselineKwh * TARIF_KWH);
+            document.getElementById('inv-val-actual').innerText = formatRp(metrics.totalActualKwh * TARIF_KWH);
+            document.getElementById('inv-val-saving').innerText = formatRp(metrics.savingRp);
+            document.getElementById('inv-val-total').innerText = formatRp(metrics.tagihanKsaGross);
+
+            document.body.classList.add('invoice-mode');
+            setTimeout(() => { window.print(); document.body.classList.remove('invoice-mode'); }, 500);
+        };
+
+        // Init Run
+        restoreSession();
 
     </script>
 </body>
