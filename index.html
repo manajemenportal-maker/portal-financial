@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Kalimaja | Smart Energy & IoT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; background-color: #f8fafc; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .sidebar-gradient { background: linear-gradient(180deg, #020617 0%, #1e1b4b 100%); }
+        .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1); }
+        .status-pill { padding: 4px 12px; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .modal-overlay { 
+            position: fixed; inset: 0; z-index: 9999; 
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+            opacity: 0; pointer-events: none; transition: all 0.3s ease;
+        }
+        .modal-container { 
+            background: white; width: 100%; max-width: 32rem; border-radius: 2rem; 
+            transform: scale(0.95); transition: all 0.3s ease; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-active { opacity: 1; pointer-events: auto; }
+        .modal-active .modal-container { transform: scale(1); }
+        
+        .auth-card { background: white; border-radius: 2.5rem; width: 100%; max-width: 32rem; padding: 3rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .hidden-el { display: none !important; }
+        
+        input, select, textarea { border: 2px solid #f1f5f9; border-radius: 1rem; padding: 1rem 1.5rem; font-weight: 700; outline: none; width: 100%; transition: all 0.2s ease;}
+        input:focus, select:focus, textarea:focus { border-color: #4f46e5; background: #f8fafc; }
+
+        .glow-pulse { box-shadow: 0 0 10px rgba(6, 182, 212, 0.7); animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+        }
+        .number-transition { transition: all 0.3s ease-out; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            body.invoice-mode #app-content,
+            body.invoice-mode #auth-screen,
+            body.invoice-mode .modal-overlay,
+            body.invoice-mode aside,
+            body.invoice-mode nav { display: none !important; }
+            body.invoice-mode #invoice-print-template { display: block !important; }
+        }
+        #invoice-print-template { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen text-left">
+
+    <div id="custom-alert" class="modal-overlay">
+        <div class="modal-container text-center p-8 bg-white max-w-sm mx-auto my-auto shadow-2xl">
+            <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 mb-2">Informasi</h3>
+            <p id="alert-msg" class="text-sm font-medium text-slate-500 mb-6">Pesan peringatan di sini.</p>
+            <div class="flex gap-2 justify-center">
+                <button id="alert-ok-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-colors">Tutup</button>
+                <button id="alert-cancel-btn" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl transition-colors hidden-el">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cloud-loader" class="fixed inset-0 z-[9000] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-white font-bold tracking-widest uppercase text-xs animate-pulse" id="loader-text">Menghubungkan Database Cloud...</p>
+    </div>
+
+    <div id="auth-screen" class="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-6 overflow-y-auto hidden-el">
+        <div class="auth-card shadow-2xl border border-white/10 mt-10 mb-10">
+            <div class="text-center mb-8 cursor-pointer" onclick="window.triggerAdminLogin()" title="Klik logo 3x untuk login rahasia admin">
+                <div class="h-20 w-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl">
+                    <i class="fas fa-bolt text-3xl text-amber-300"></i>
+                </div>
+                <h2 class="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Portal <span class="text-indigo-600">Kalimaja</span></h2>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3">Smart Energy System & IoT</p>
+            </div>
+
+            <div id="login-view">
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Username / Email (Umum)</label>
+                        <input type="text" id="login-email" placeholder="Masukkan akun Anda">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase block px-2">Kata Sandi</label>
+                        <input type="password" id="login-password" placeholder="••••••••">
+                    </div>
+                    <button onclick="window.doLogin('public')" class="w-full bg-indigo-950 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all mt-4 shadow-lg">Masuk Sistem</button>
+                </div>
+                <div class="text-center pt-6 border-t border-slate-100 mt-6 w-full">
+                    <p class="text-xs font-bold text-slate-500">
+                        Belum punya akun? <button onclick="window.toggleAuthView('register')" class="text-indigo-600 underline font-black ml-1">Daftar</button>
+                    </p>
+                </div>
+            </div>
+
+            <div id="admin-login-view" class="hidden-el">
+                <div class="bg-red-50 p-4 rounded-xl mb-6 border border-red-100 text-center">
+                    <p class="text-xs font-black text-red-700 uppercase tracking-widest"><i class="fas fa-shield-alt mr-1"></i> Admin Security Login</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Username Admin</label>
+                        <input type="text" id="admin-login-username" value="admin" placeholder="Username">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Kata Sandi</label>
+                        <input type="password" id="admin-login-password" value="123" placeholder="••••••••">
+                    </div>
+                    <button onclick="window.doLogin('admin')" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-red-700 transition-all mt-4 shadow-lg"><i class="fas fa-lock mr-2"></i> Akses Panel Admin</button>
+                </div>
+                <div class="text-center pt-6 border-t border-slate-100 mt-6 w-full">
+                    <button onclick="window.toggleAuthView('login')" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"><i class="fas fa-arrow-left mr-1"></i> Kembali ke Login Umum</button>
+                </div>
+            </div>
+
+            <div id="register-view" class="hidden-el">
+                <div class="space-y-3">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Nama Lengkap</label>
+                        <input type="text" id="reg-name" placeholder="Nama Perusahaan / Pribadi">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Email / Username (Login)</label>
+                        <input type="text" id="reg-username" placeholder="Satu kata tanpa spasi atau email">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Kata Sandi</label>
+                        <input type="password" id="reg-password" placeholder="Minimal 6 karakter">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase px-2 block">Pilih Peran</label>
+                        <select id="reg-role">
+                            <option value="customer">Customer (Pemilik Gedung)</option>
+                            <option value="investor">Investor (Pendana)</option>
+                            <option value="sales">Sales / Rekanan</option>
+                        </select>
+                    </div>
+                    <button onclick="window.doRegister()" class="w-full bg-amber-500 text-slate-900 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all mt-4 shadow-lg">Daftar Akun Baru</button>
+                </div>
+                <div class="text-center pt-6 border-t border-slate-100 mt-6 w-full">
+                    <button onclick="window.toggleAuthView('login')" class="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"><i class="fas fa-arrow-left mr-1"></i> Kembali ke Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden-el">
+        <aside class="fixed left-0 top-0 h-full w-64 sidebar-gradient text-white p-6 hidden lg:block z-50 overflow-y-auto no-print">
+            <div class="flex items-center gap-3 mb-10">
+                <div class="h-10 w-10 bg-indigo-500/20 border border-indigo-400/30 rounded-lg flex items-center justify-center text-white">
+                    <i class="fas fa-bolt text-amber-400"></i>
+                </div>
+                <div class="text-left leading-none">
+                    <span class="block font-black text-sm tracking-tighter uppercase leading-none">KALIMAJA</span>
+                    <span class="text-[8px] font-bold text-indigo-400 tracking-[0.2em] uppercase mt-1 block">SUPER APP</span>
+                </div>
+            </div>
+
+            <nav class="space-y-4">
+                <div class="space-y-2">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-2 italic">Akses: <span id="user-role-badge" class="text-amber-400">-</span></p>
+                    
+                    <button onclick="window.switchView('finance')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-sm font-bold border-l-4 border-amber-500 text-left transition-all">
+                        <i class="fas fa-chart-line w-5"></i> Dashboard Finansial
+                    </button>
+
+                    <button onclick="window.switchView('iot')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-sm font-bold text-cyan-400 hover:text-cyan-300 border-l-4 border-transparent hover:border-cyan-400 text-left transition-all">
+                        <i class="fas fa-microchip w-5"></i> Pusat Kendali IoT
+                    </button>
+                    
+                    <button onclick="window.switchView('chat')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all">
+                        <div class="flex items-center gap-3"><i class="fas fa-comments w-5"></i> Pusat Pesan</div>
+                    </button>
+
+                    <div id="admin-menu" class="hidden-el pt-4 mt-4 border-t border-white/10">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-2 italic mb-2">Manajemen Induk</p>
+                        <button onclick="window.switchView('projects')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all">
+                            <i class="fas fa-project-diagram w-5"></i> Master Proyek
+                        </button>
+                        <button onclick="window.switchView('users')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all">
+                            <i class="fas fa-users w-5"></i> Master Pengguna
+                        </button>
+                        <button onclick="window.uiModal('modal-project', true)" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl text-sm font-medium text-slate-300 hover:text-white text-left transition-all text-amber-300">
+                            <i class="fas fa-plus-circle w-5"></i> Buat Kontrak Baru
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="pt-8 mt-auto">
+                    <button onclick="window.doLogout()" class="w-full flex items-center gap-3 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-sm font-bold text-red-400 transition-all text-left">
+                        <i class="fas fa-sign-out-alt w-5"></i> Keluar Sistem
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="lg:ml-64 p-6 lg:p-10">
+            <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
+                <div>
+                    <h1 class="text-3xl font-black italic uppercase tracking-tighter text-slate-950 leading-none">Management <span class="text-indigo-600">Overview</span></h1>
+                    <p id="profile-name" class="text-sm font-medium text-slate-500 mt-2">Selamat datang, -</p>
+                </div>
+
+                <div id="global-project-selector" class="hidden-el bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3 w-full md:w-auto">
+                    <div class="bg-indigo-50 p-2 rounded-xl text-indigo-600"><i class="fas fa-building"></i></div>
+                    <div class="flex-1 md:w-64 pr-2">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Proyek / Gedung Aktif</p>
+                        <select id="select-project" onchange="window.changeProject(this.value)" class="w-full bg-transparent border-none p-0 font-bold text-slate-800 text-sm outline-none cursor-pointer"></select>
+                    </div>
+                </div>
+            </header>
+
+            <div id="view-finance" class="space-y-8">
+                <!-- Info Proyek Utama -->
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white rounded-[32px] p-8 card-shadow border border-slate-100 relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
+                        <div class="mb-6 relative z-10 flex justify-between items-start">
+                            <div>
+                                <span class="status-pill bg-emerald-100 text-emerald-700 mb-2 inline-block"><i class="fas fa-link mr-1"></i> Terhubung ke Cloud IoT</span>
+                                <h2 id="fin-loc-name" class="text-2xl font-black italic uppercase text-slate-900 leading-tight">-</h2>
+                                <p id="fin-cust-info" class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1">-</p>
+                            </div>
+                            <!-- Tombol Cetak Invoice -->
+                            <button id="btn-print-invoice" onclick="window.triggerPrintInvoice()" class="hidden-el bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold tracking-widest uppercase transition-colors shadow-sm flex items-center gap-2">
+                                <i class="fas fa-print"></i> Cetak Invoice
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-slate-100 relative z-10">
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase mb-1">Target Baseline</p><p id="fin-baseline" class="text-sm font-bold text-indigo-900 mono">-</p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase mb-1">Total Unit AC</p><p id="fin-ac-count" class="text-sm font-bold text-indigo-900">-</p></div>
+                            <div><p class="text-[9px] font-black text-slate-400 uppercase mb-1">Status Sensor</p><p class="text-sm font-bold text-emerald-600 animate-pulse">Live Syncing</p></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-indigo-950 rounded-[32px] p-8 card-shadow text-white relative flex flex-col justify-between">
+                        <div>
+                            <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2 italic">Informasi Investasi</p>
+                            <h3 id="fin-inv-name" class="text-lg font-black uppercase mb-4 truncate">-</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                                <span class="text-[10px] text-slate-400 uppercase">Nilai CAPEX Proyek</span>
+                                <span id="fin-capex" class="font-bold text-amber-400 mono">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-slate-400 uppercase">Estimasi BEP</span>
+                                <span id="fin-bep" class="font-bold text-white mono">0 Bulan</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-[40px] p-8 card-shadow border border-slate-100 flex flex-col justify-between">
+                        <h3 class="font-black italic uppercase text-slate-900 mb-6">Live Performance & Tagihan</h3>
+                        <div class="space-y-4 flex-1">
+                            <div class="p-4 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100">
+                                <div>
+                                    <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Estimasi Tagihan Normal PLN</span>
+                                    <span id="fin-cost-normal" class="text-lg font-bold text-slate-600 line-through decoration-red-400 mono">Rp 0</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-indigo-50 rounded-2xl flex justify-between items-center border border-indigo-200">
+                                <div>
+                                    <span class="text-[10px] font-black text-indigo-600 uppercase block mb-1">Tagihan Aktual IoT Saat Ini (Live)</span>
+                                    <span id="fin-cost-actual" class="text-2xl font-black text-indigo-900 mono number-transition">Rp 0</span>
+                                </div>
+                                <i class="fas fa-microchip text-indigo-400 text-3xl animate-bounce"></i>
+                            </div>
+                        </div>
+                        <div class="pt-6 mt-6 border-t border-slate-100">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Total Penghematan (Gross Saving)</span>
+                                <span id="fin-saving" class="text-3xl font-black text-emerald-500 italic mono number-transition">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-[40px] p-8 card-shadow border border-slate-100 flex flex-col justify-between">
+                        <h3 class="font-black italic uppercase text-slate-900 mb-6">Revenue Split Matrix (Bagi Hasil)</h3>
+                        <div class="space-y-4 flex-1 flex flex-col justify-center">
+                            <div class="flex justify-between p-5 bg-slate-50 rounded-2xl items-center border border-slate-100">
+                                <span class="text-[11px] font-black text-slate-500 uppercase tracking-widest" id="label-share-cust">Hak Pemilik Gedung</span>
+                                <span id="fin-share-cust" class="font-black text-slate-900 italic text-xl mono number-transition">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between p-5 bg-emerald-50 rounded-2xl border border-emerald-200 items-center">
+                                <span class="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Net Profit Investor (70%)</span>
+                                <span id="fin-share-inv" class="font-black text-emerald-600 italic text-2xl mono number-transition">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between p-5 bg-amber-50 rounded-2xl border border-amber-200 items-center">
+                                <span class="text-[11px] font-black text-amber-700 uppercase tracking-widest">Laba PT Kalimaja (30%)</span>
+                                <span id="fin-share-ksa" class="font-black text-amber-600 italic text-2xl mono number-transition">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-iot" class="hidden-el space-y-6">
+                <!-- Panel Utama Data Center -->
+                <div class="bg-slate-900 rounded-[32px] p-8 border border-slate-800 shadow-2xl relative overflow-hidden text-white">
+                    <div class="absolute -right-10 -top-10 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                        <div>
+                            <p class="text-cyan-400 font-bold mb-2 uppercase tracking-widest text-[10px] flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 glow-pulse"></span> Telemetry Server: Online
+                            </p>
+                            <h2 class="text-3xl font-black mb-1">Smart AC Control Panel</h2>
+                            <p class="text-sm text-slate-400">Total Akumulasi Beban di Gedung <span id="iot-loc-name" class="text-white font-bold">-</span></p>
+                        </div>
+                        <div class="bg-slate-950/50 p-6 rounded-2xl border border-slate-700/50 text-right min-w-[240px]">
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Total kWh Meter Berjalan</p>
+                            <p class="text-5xl font-black text-cyan-400 mono number-transition" id="iot-total-kwh">0 <span class="text-lg text-slate-500">kWh</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-slate-800 flex flex-wrap gap-4 items-center justify-between relative z-10">
+                        <div class="flex items-center gap-6 text-sm bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
+                            <span class="flex items-center gap-2 font-bold text-slate-300"><i class="fas fa-server"></i> <span id="iot-total-node">0</span> Terdaftar</span>
+                            <span class="flex items-center gap-2 font-bold text-emerald-400"><i class="fas fa-power-off"></i> <span id="iot-active-node">0</span> ON</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-4">
+                            <!-- Toggle Simulator (Untuk Testing) -->
+                            <div class="flex items-center gap-3 bg-slate-950/50 px-4 py-2 rounded-xl border border-slate-700">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Simulator IoT DB (Live)</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="iot-sim-toggle" class="sr-only peer" checked>
+                                    <div class="w-9 h-5 bg-slate-600 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                                </label>
+                            </div>
+                            
+                            <!-- Tombol Tambah AC (Hanya Admin) -->
+                            <button id="btn-add-ac" onclick="window.uiModal('modal-ac', true)" class="hidden-el bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors border border-cyan-400/30 shadow-lg">
+                                <i class="fas fa-plus mr-1"></i> Tambah Node AC
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid Kartu AC -->
+                <div id="iot-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Disuntik via JS -->
+                </div>
+            </div>
+
+            <div id="view-chat" class="hidden-el h-[calc(100vh-14rem)] flex flex-col md:flex-row gap-6 text-left">
+                <div id="chat-contacts" class="w-full md:w-1/3 bg-white rounded-[32px] p-6 card-shadow border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black italic uppercase tracking-tight text-indigo-950">Buku Kontak</h3>
+                        <i class="fas fa-address-book text-slate-300"></i>
+                    </div>
+                    <div id="contact-list" class="space-y-2 overflow-y-auto flex-1 pr-2">
+                        <!-- Disuntik via JS -->
+                    </div>
+                </div>
+                <div class="flex-1 bg-white rounded-[32px] card-shadow border border-slate-100 flex flex-col overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 bg-slate-50 flex items-center gap-4">
+                        <div class="h-12 w-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xl shadow-inner"><i class="fas fa-headset"></i></div>
+                        <div>
+                            <h4 id="chat-active-name" class="font-black uppercase text-slate-900 leading-tight">Pusat Bantuan</h4>
+                            <p id="chat-active-role" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Admin KSA</p>
+                        </div>
+                    </div>
+                    <div id="chat-messages" class="flex-1 p-6 overflow-y-auto bg-slate-50/50 space-y-4">
+                        <!-- Pesan disuntik via JS -->
+                    </div>
+                    <div class="flex flex-col bg-white border-t border-slate-100 p-4">
+                        <div class="flex gap-2 items-center">
+                            <input type="text" id="chat-input" placeholder="Tuliskan pesan Anda..." class="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-400" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                            <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-800 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md">Kirim</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-projects" class="hidden-el space-y-8">
+                <div class="bg-white rounded-[40px] card-shadow border border-slate-100 overflow-hidden text-left">
+                    <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-blue-50/50">
+                        <h3 class="font-black italic uppercase tracking-tight text-blue-900"><i class="fas fa-project-diagram mr-2 text-blue-600"></i> Master Proyek</h3>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 uppercase font-black text-[10px] text-slate-500 tracking-widest">
+                                <tr>
+                                    <th class="py-4 px-4">Nama Gedung</th>
+                                    <th class="py-4 px-4">Customer</th>
+                                    <th class="py-4 px-4">Investor</th>
+                                    <th class="py-4 px-4 text-center">Aksi Lanjut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-projects-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-users" class="hidden-el space-y-8">
+                <div class="bg-white rounded-[40px] card-shadow border border-slate-100 overflow-hidden text-left">
+                    <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50">
+                        <h3 class="font-black italic uppercase tracking-tight text-emerald-900"><i class="fas fa-users mr-2 text-emerald-600"></i> Master Pengguna</h3>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 uppercase font-black text-[10px] text-slate-500 tracking-widest">
+                                <tr>
+                                    <th class="py-4 px-4">Nama Lengkap</th>
+                                    <th class="py-4 px-4">Role</th>
+                                    <th class="py-4 px-4">Username Login</th>
+                                    <th class="py-4 px-4 text-center">Kata Sandi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-users-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal: Register Project (Admin) -->
+    <div id="modal-project" class="modal-overlay text-left">
+        <div class="modal-container bg-slate-50">
+            <div class="p-6 border-b border-slate-200 bg-white flex justify-between items-center">
+                <h3 class="font-black italic uppercase tracking-tight text-indigo-900">Setup Proyek Baru</h3>
+                <button onclick="window.uiModal('modal-project', false)" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-500 uppercase px-2">ID/Username Customer (Pemilik Gedung)</label>
+                    <input type="text" id="proj-cust" placeholder="Misal: customer1" class="w-full bg-white">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-500 uppercase px-2">ID/Username Investor (Pendana)</label>
+                    <input type="text" id="proj-inv" placeholder="Misal: investor1" class="w-full bg-white">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-500 uppercase px-2">Lokasi / Nama Gedung</label>
+                    <input type="text" id="proj-loc" placeholder="Misal: Gedung A Lt 1" class="w-full bg-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-500 uppercase px-2">Target Baseline (kWh)</label>
+                        <input type="number" id="proj-base" placeholder="Misal: 5000" class="w-full bg-white">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-500 uppercase px-2">Nilai CAPEX (Rp)</label>
+                        <input type="number" id="proj-capex" placeholder="Misal: 25000000" class="w-full bg-white">
+                    </div>
+                </div>
+                <button onclick="window.saveProject()" class="w-full bg-indigo-900 text-white py-4 rounded-xl font-bold mt-4 hover:bg-black transition-colors shadow-lg">Simpan Proyek</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah AC (IoT) -->
+    <div id="modal-ac" class="modal-overlay text-left">
+        <div class="modal-container bg-slate-900 text-white border border-slate-700">
+            <div class="p-6 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
+                <h3 class="font-black uppercase tracking-tight text-cyan-400"><i class="fas fa-plus-circle mr-2"></i> Register IoT Node (AC)</h3>
+                <button onclick="window.uiModal('modal-ac', false)" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase">Nama / Tipe AC</label>
+                    <input type="text" id="ac-name" class="w-full bg-slate-950 border-slate-700 text-white focus:border-cyan-500" placeholder="Misal: AC Split 1PK">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase">Lokasi Ruangan</label>
+                    <input type="text" id="ac-loc" class="w-full bg-slate-950 border-slate-700 text-white focus:border-cyan-500" placeholder="Misal: Ruang Meeting">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase">MAC Address / Device ID</label>
+                    <input type="text" id="ac-mac" class="w-full bg-slate-950 border-slate-700 text-cyan-300 font-mono uppercase focus:border-cyan-500" placeholder="ESP32-XXXX">
+                </div>
+                <button onclick="window.saveAC()" class="w-full bg-cyan-600 text-white py-4 rounded-xl font-bold mt-4 hover:bg-cyan-500 transition-colors shadow-lg">Simpan Hardware Baru</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="invoice-print-template" class="p-8 max-w-4xl mx-auto bg-white text-slate-900">
+        <div class="border-b-4 border-indigo-950 pb-6 mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-black italic uppercase tracking-tighter text-indigo-950 leading-none">KALIMAJA AIRTRON</h1>
+                <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.2em] mt-2">PT Kalimaja Surya Alam</p>
+            </div>
+            <div class="text-right">
+                <h2 class="text-3xl font-black text-slate-800 uppercase tracking-widest mb-2">INVOICE TAGIHAN</h2>
+                <p class="text-sm font-bold text-slate-600" id="inv-date">Tanggal: -</p>
+            </div>
+        </div>
+        <div class="flex justify-between items-start mb-10">
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 min-w-[300px]">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Ditagihkan Kepada:</p>
+                <p class="text-xl font-black text-slate-800 uppercase mb-1" id="inv-cust-name">-</p>
+                <p class="text-sm font-bold text-slate-600 uppercase" id="inv-cust-loc"><i class="fas fa-map-marker-alt mr-1"></i> -</p>
+            </div>
+            <div class="text-right p-6">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Periode Konsumsi IoT:</p>
+                <p class="text-2xl font-black text-indigo-600 uppercase italic border-b-2 border-indigo-200 inline-block pb-1">Real-time Data</p>
+            </div>
+        </div>
+        <table class="w-full text-left border-collapse mb-10">
+            <thead class="bg-indigo-950 text-white">
+                <tr>
+                    <th class="py-4 px-6 text-xs font-bold uppercase tracking-widest rounded-tl-xl">Keterangan / Parameter</th>
+                    <th class="py-4 px-6 text-xs font-bold uppercase tracking-widest text-right rounded-tr-xl">Nilai (IDR)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 border border-slate-200">
+                <tr>
+                    <td class="py-5 px-6 text-sm font-bold text-slate-500 italic">Estimasi Tagihan Listrik Normal</td>
+                    <td class="py-5 px-6 text-right text-sm font-bold text-slate-400 line-through decoration-red-400 mono" id="inv-val-normal">-</td>
+                </tr>
+                <tr>
+                    <td class="py-5 px-6 text-sm font-bold text-slate-700">Tagihan Aktual Listrik IoT</td>
+                    <td class="py-5 px-6 text-right text-sm font-black text-slate-800 mono" id="inv-val-actual">-</td>
+                </tr>
+                <tr class="bg-emerald-50/50">
+                    <td class="py-5 px-6 text-sm font-black text-emerald-700 uppercase">Gross Saving (Realisasi Penghematan)</td>
+                    <td class="py-5 px-6 text-right text-base font-black text-emerald-600 mono" id="inv-val-saving">-</td>
+                </tr>
+                <tr class="bg-indigo-50 border-t-2 border-indigo-200">
+                    <td id="inv-label-total" class="py-6 px-6 text-base font-black text-indigo-950 uppercase tracking-widest">Total Tagihan Bagi Hasil (PT KSA)</td>
+                    <td class="py-6 px-6 text-right text-2xl font-black text-indigo-700 mono" id="inv-val-total">-</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="text-center pt-4">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-16">Hormat Kami,</p>
+            <p class="text-sm font-black text-slate-800 uppercase border-b border-slate-800 pb-1 inline-block">PT KALIMAJA SURYA ALAM</p>
+            <p class="text-xs text-slate-500 font-bold mt-1">Divisi Kemitraan & Keuangan</p>
+        </div>
+    </div>
+
+    <script>
+        // === LOCAL STATE DATABASE (Auto-Healing Fallback) ===
+        window.dbUsers = [];
+        window.dbProjects = [];
+        window.dbDevices = [];
+        window.dbChats = [];
+        
+        window.activeUser = null;
+        window.activeProject = null;
+        window.isOfflineMode = true; // Akan false jika Firebase sukses
+        let isSimRunning = true;
+        const TARIF_PLN = 1615; 
+
+        // Utilities
+        const formatIDR = (v) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(v);
+        const formatNum = (v) => new Intl.NumberFormat('id-ID').format(v);
+
+        // Custom Modal UI
+        window.showAlert = (msg) => {
+            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('alert-cancel-btn').classList.add('hidden-el');
+            document.getElementById('alert-ok-btn').onclick = () => document.getElementById('custom-alert').classList.remove('modal-active');
+            document.getElementById('custom-alert').classList.add('modal-active');
+        };
+
+        window.uiModal = (id, open) => {
+            const m = document.getElementById(id);
+            if (m) open ? m.classList.add('modal-active') : m.classList.remove('modal-active');
+        };
+
+        // Navigation
+        window.toggleAuthView = (view) => {
+            document.getElementById('login-view').classList.add('hidden-el');
+            document.getElementById('register-view').classList.add('hidden-el');
+            document.getElementById('admin-login-view').classList.add('hidden-el');
+            if(view === 'register') document.getElementById('register-view').classList.remove('hidden-el');
+            else if(view === 'admin') document.getElementById('admin-login-view').classList.remove('hidden-el');
+            else document.getElementById('login-view').classList.remove('hidden-el');
+        };
+
+        let adminClickCount = 0;
+        let adminClickTimer = null;
+        window.triggerAdminLogin = () => {
+            adminClickCount++;
+            if (adminClickCount === 3) {
+                window.toggleAuthView('admin');
+                adminClickCount = 0;
+            }
+            clearTimeout(adminClickTimer);
+            adminClickTimer = setTimeout(() => { adminClickCount = 0; }, 1000);
+        };
+
+        window.switchView = (viewName) => {
+            document.getElementById('view-finance').classList.add('hidden-el');
+            document.getElementById('view-iot').classList.add('hidden-el');
+            document.getElementById('view-projects').classList.add('hidden-el');
+            document.getElementById('view-users').classList.add('hidden-el');
+            document.getElementById('view-chat').classList.add('hidden-el');
+
+            document.getElementById(`view-${viewName}`).classList.remove('hidden-el');
+            
+            if(viewName === 'finance' || viewName === 'iot') refreshUI();
+            if(viewName === 'projects') window.renderProjectTable();
+            if(viewName === 'users') window.renderUserTable();
+            if(viewName === 'chat') window.renderChatContacts();
+        };
+
+        function seedLocalData() {
+            if(window.dbUsers.length === 0) {
+                window.dbUsers.push({ username: 'admin', pass: '123', role: 'admin', name: 'Super Admin KSA' });
+                window.dbUsers.push({ username: 'customer1', pass: '123', role: 'customer', name: 'PT Angkasa Raya' });
+                window.dbUsers.push({ username: 'investor1', pass: '123', role: 'investor', name: 'Bpk. Budi (Investor)' });
+                window.dbUsers.push({ username: 'sales1', pass: '123', role: 'sales', name: 'Agus Sales' });
+            }
+            if(window.dbProjects.length === 0) {
+                window.dbProjects.push({ id: 'PRJ-1', custEmail: 'customer1', invEmail: 'investor1', location: 'Gedung Pusat PT Angkasa', baseline: 5000, capex: 25000000 });
+            }
+            if(window.dbDevices.length === 0) {
+                window.dbDevices.push({ id: 'ESP-A1', projectId: 'PRJ-1', name: 'AC Meeting', location: 'Lantai 1', baseData: 100, power: true, temp: 24, status: 'online' });
+                window.dbDevices.push({ id: 'ESP-A2', projectId: 'PRJ-1', name: 'AC Server', location: 'Lantai 2', baseData: 550, power: true, temp: 18, status: 'online' });
+            }
+        }
+
+        window.doLogin = (context) => {
+            let userIn, passIn;
+            if (context === 'admin') {
+                userIn = document.getElementById('admin-login-username').value.trim();
+                passIn = document.getElementById('admin-login-password').value.trim();
+            } else {
+                userIn = document.getElementById('login-email').value.trim();
+                passIn = document.getElementById('login-password').value.trim();
+            }
+
+            // PENTING: Jika Firebase gagal/delay, seed data lokal agar selalu bisa login
+            if(window.isOfflineMode) seedLocalData();
+
+            const user = window.dbUsers.find(u => u.username === userIn && u.pass === passIn);
+            
+            if(user) {
+                window.activeUser = user;
+                document.getElementById('auth-screen').classList.add('hidden-el');
+                document.getElementById('app-content').classList.remove('hidden-el');
+                
+                document.getElementById('profile-name').innerText = `Selamat datang, ${user.name}`;
+                document.getElementById('user-role-badge').innerText = user.role.toUpperCase();
+                
+                if(user.role === 'admin') {
+                    document.getElementById('admin-menu').classList.remove('hidden-el');
+                    document.getElementById('btn-add-ac').classList.remove('hidden-el');
+                    document.getElementById('btn-print-invoice').classList.remove('hidden-el');
+                } else {
+                    document.getElementById('admin-menu').classList.add('hidden-el');
+                    document.getElementById('btn-add-ac').classList.add('hidden-el');
+                    document.getElementById('btn-print-invoice').classList.add('hidden-el');
+                }
+
+                populateProjectSelector();
+                window.switchView('finance');
+            } else {
+                window.showAlert("Username atau Password salah!");
+            }
+        };
+
+        window.doLogout = () => {
+            window.activeUser = null;
+            window.activeProject = null;
+            document.getElementById('app-content').classList.add('hidden-el');
+            document.getElementById('auth-screen').classList.remove('hidden-el');
+            document.getElementById('login-password').value = '';
+            document.getElementById('admin-login-password').value = '';
+            window.toggleAuthView('login');
+        };
+
+        window.doRegister = () => {
+            if(window.isOfflineMode) seedLocalData();
+            const name = document.getElementById('reg-name').value.trim();
+            const username = document.getElementById('reg-username').value.trim();
+            const pass = document.getElementById('reg-password').value.trim();
+            const role = document.getElementById('reg-role').value;
+            
+            if(!name || !username || !pass) return window.showAlert("Harap isi semua kolom!");
+            if(window.dbUsers.find(u => u.username === username)) return window.showAlert("Username sudah terdaftar!");
+
+            window.dbUsers.push({ name, username, pass, role });
+            window.showAlert("Pendaftaran berhasil! Silakan login.");
+            window.toggleAuthView('login');
+            document.getElementById('login-email').value = username;
+        };
+
+        function populateProjectSelector() {
+            let userProjs = window.dbProjects;
+            if(window.activeUser.role === 'customer') userProjs = window.dbProjects.filter(p => p.custEmail === window.activeUser.username);
+            if(window.activeUser.role === 'investor') userProjs = window.dbProjects.filter(p => p.invEmail === window.activeUser.username);
+
+            const selector = document.getElementById('select-project');
+            const container = document.getElementById('global-project-selector');
+
+            if(userProjs.length > 0) {
+                container.classList.remove('hidden-el');
+                selector.innerHTML = userProjs.map(p => `<option value="${p.id}">${p.location}</option>`).join('');
+                if(!window.activeProject || !userProjs.find(p=>p.id === window.activeProject.id)) {
+                    window.activeProject = userProjs[0];
+                    selector.value = window.activeProject.id;
+                }
+            } else {
+                container.classList.add('hidden-el');
+                window.activeProject = null;
+            }
+            refreshUI();
+        }
+
+        window.changeProject = (projId) => {
+            window.activeProject = window.dbProjects.find(p => p.id === projId);
+            refreshUI();
+        };
+
+        function refreshUI() {
+            if(!window.activeUser || !window.activeProject) return;
+            if(!document.getElementById('view-finance').classList.contains('hidden-el')) renderFinancials();
+            if(!document.getElementById('view-iot').classList.contains('hidden-el')) renderIoTData();
+        }
+
+        function renderFinancials() {
+            const proj = window.activeProject;
+            const projDevices = window.dbDevices.filter(d => d.projectId === proj.id);
+            
+            const liveKwh = projDevices.reduce((sum, d) => sum + d.baseData, 0);
+            
+            const custObj = window.dbUsers.find(u => u.username === proj.custEmail) || {};
+            const invObj = window.dbUsers.find(u => u.username === proj.invEmail) || {};
+            
+            document.getElementById('fin-loc-name').innerText = proj.location;
+            document.getElementById('fin-cust-info').innerText = `Customer: ${custObj.name || proj.custEmail}`;
+            document.getElementById('fin-baseline').innerText = proj.baseline + " kWh";
+            document.getElementById('fin-ac-count').innerText = projDevices.length + " Unit";
+            document.getElementById('fin-inv-name').innerText = invObj.name || proj.invEmail;
+            document.getElementById('fin-capex').innerText = formatIDR(proj.capex);
+
+            const biayaNormal = proj.baseline * TARIF_PLN;
+            const biayaAktual = liveKwh * TARIF_PLN;
+            const savingIdr = Math.max(0, biayaNormal - biayaAktual);
+            
+            const porsiInvestorGross = savingIdr * 0.7; 
+            const netProfitInvestor = porsiInvestorGross * 0.7; 
+            const feeManajemenKSA = porsiInvestorGross * 0.3; 
+            const porsiCustomer = savingIdr * 0.3; 
+
+            document.getElementById('fin-cost-normal').innerText = formatIDR(biayaNormal);
+            document.getElementById('fin-cost-actual').innerText = formatIDR(biayaAktual);
+            document.getElementById('fin-saving').innerText = formatIDR(savingIdr);
+            document.getElementById('fin-share-cust').innerText = formatIDR(porsiCustomer);
+            document.getElementById('fin-share-inv').innerText = formatIDR(netProfitInvestor);
+            document.getElementById('fin-share-ksa').innerText = formatIDR(feeManajemenKSA);
+
+            let bepVal = "0 Bulan";
+            if(netProfitInvestor > 0 && proj.capex > 0) bepVal = (proj.capex / netProfitInvestor).toFixed(1) + " Bulan";
+            document.getElementById('fin-bep').innerText = bepVal;
+        }
+
+        function renderIoTData() {
+            const projDevices = window.dbDevices.filter(d => d.projectId === window.activeProject.id);
+            const liveKwh = projDevices.reduce((sum, d) => sum + d.baseData, 0);
+            const activeCount = projDevices.filter(d => d.power).length;
+            
+            document.getElementById('iot-loc-name').innerText = window.activeProject.location;
+            document.getElementById('iot-total-kwh').innerHTML = `${formatNum(liveKwh)} <span class="text-lg text-slate-500">kWh</span>`;
+            document.getElementById('iot-total-node').innerText = projDevices.length;
+            document.getElementById('iot-active-node').innerText = activeCount;
+
+            const grid = document.getElementById('iot-grid-container');
+            grid.innerHTML = '';
+
+            const canControl = window.activeUser.role === 'admin' || window.activeUser.role === 'customer';
+
+            projDevices.sort((a,b) => a.id.localeCompare(b.id)).forEach(d => {
+                const btnState = canControl ? '' : 'disabled';
+                const cursorState = canControl ? 'cursor-pointer hover:bg-slate-700' : 'cursor-not-allowed opacity-50';
+
+                grid.insertAdjacentHTML('beforeend', `
+                    <div class="bg-slate-800 rounded-2xl p-5 border ${d.power ? 'border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-slate-700 opacity-80'} flex flex-col justify-between transition-all text-white">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="w-2.5 h-2.5 rounded-full ${d.status === 'online' ? 'bg-emerald-500 glow-pulse' : 'bg-red-500'}"></span>
+                                    <h4 class="font-bold truncate">${d.name}</h4>
+                                </div>
+                                <p class="text-[10px] text-slate-400 font-mono">MAC: ${d.id}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4 flex justify-between items-end">
+                            <div><span class="text-3xl font-black number-transition">${formatNum(d.baseData)}</span> <span class="text-xs text-slate-400">kWh</span></div>
+                            <span class="text-xs ${d.power ? 'text-cyan-400' : 'text-slate-500'} font-bold">${d.power ? 'ON' : 'OFF'}</span>
+                        </div>
+
+                        <!-- PANEL KONTROL -->
+                        <div class="pt-4 border-t border-slate-700 flex justify-between items-center">
+                            <button onclick="window.toggleAC('${d.id}')" class="p-3 rounded-xl ${d.power ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'} ${cursorState}" ${btnState} title="Power ON/OFF">
+                                <i class="fas fa-power-off"></i>
+                            </button>
+                            
+                            <div class="flex items-center gap-3 bg-slate-900 rounded-xl p-1.5 border border-slate-700">
+                                <button onclick="window.changeTemp('${d.id}', -1)" class="w-8 h-8 rounded-lg ${cursorState}" ${!d.power || !canControl ? 'disabled' : ''}><i class="fas fa-minus text-xs"></i></button>
+                                <span class="text-lg font-black font-mono ${d.power ? 'text-cyan-400' : 'text-slate-600'} w-8 text-center">${d.temp}°</span>
+                                <button onclick="window.changeTemp('${d.id}', 1)" class="w-8 h-8 rounded-lg ${cursorState}" ${!d.power || !canControl ? 'disabled' : ''}><i class="fas fa-plus text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        window.toggleAC = (id) => {
+            const dev = window.dbDevices.find(d => d.id === id);
+            if(dev) { dev.power = !dev.power; refreshUI(); }
+        };
+
+        window.changeTemp = (id, delta) => {
+            const dev = window.dbDevices.find(d => d.id === id);
+            if(dev && dev.power) {
+                const newT = dev.temp + delta;
+                if(newT >= 16 && newT <= 30) { dev.temp = newT; refreshUI(); }
+            }
+        };
+
+        window.renderProjectTable = () => {
+            const tbody = document.getElementById('table-projects-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            window.dbProjects.forEach((p, idx) => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b border-slate-100 text-xs hover:bg-slate-50">
+                        <td class="py-4 px-4 font-bold text-indigo-900">${p.location}</td>
+                        <td class="py-4 px-4">${p.custEmail}</td>
+                        <td class="py-4 px-4">${p.invEmail || '-'}</td>
+                        <td class="py-4 px-4 text-center">
+                            <button onclick="window.changeProject('${p.id}'); window.switchView('finance');" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg font-bold transition-colors">Monitor Proyek</button>
+                        </td>
+                    </tr>
+                `);
+            });
+        };
+
+        window.renderUserTable = () => {
+            const tbody = document.getElementById('table-users-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            window.dbUsers.forEach((u) => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="border-b border-slate-100 text-xs hover:bg-slate-50">
+                        <td class="py-4 px-4 font-bold text-slate-800">${u.name}</td>
+                        <td class="py-4 px-4"><span class="bg-slate-200 px-2 py-1 rounded uppercase text-[10px] font-bold">${u.role}</span></td>
+                        <td class="py-4 px-4 text-indigo-600">${u.username}</td>
+                        <td class="py-4 px-4 text-center font-mono text-slate-400">${u.pass}</td>
+                    </tr>
+                `);
+            });
+        };
+
+        // Modal Logic for Admin Additions
+        window.saveProject = () => {
+            const cust = document.getElementById('proj-cust').value;
+            const inv = document.getElementById('proj-inv').value;
+            const loc = document.getElementById('proj-loc').value;
+            const base = parseFloat(document.getElementById('proj-base').value) || 0;
+            const capex = parseFloat(document.getElementById('proj-capex').value) || 0;
+            
+            if(!cust || !loc) return window.showAlert("ID Customer dan Lokasi wajib diisi!");
+            
+            const pId = 'PRJ-' + Date.now();
+            window.dbProjects.push({ id: pId, custEmail: cust, invEmail: inv, location: loc, baseline: base, capex: capex, createdAt: new Date().toISOString() });
+            window.uiModal('modal-project', false);
+            window.showAlert("Proyek berhasil dibuat!");
+            window.renderProjectTable();
+            populateProjectSelector();
+        };
+
+        window.saveAC = () => {
+            const name = document.getElementById('ac-name').value.trim();
+            const loc = document.getElementById('ac-loc').value.trim();
+            const mac = document.getElementById('ac-mac').value.trim().toUpperCase().replace(/\s/g, '-');
+            
+            if(!name || !mac || !window.activeProject) return window.showAlert("Data belum lengkap atau tidak ada proyek aktif.");
+
+            window.dbDevices.push({
+                id: mac, projectId: window.activeProject.id, name: name, location: loc,
+                baseData: 0, power: true, temp: 24, status: 'online'
+            });
+            window.uiModal('modal-ac', false);
+            refreshUI();
+        };
+
+        window.renderChatContacts = () => {
+            const list = document.getElementById('contact-list');
+            if(!list) return;
+            list.innerHTML = '';
+            const contacts = window.dbUsers.filter(u => u.username !== window.activeUser.username);
+            contacts.forEach(u => {
+                list.insertAdjacentHTML('beforeend', `
+                    <div class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all mb-2 bg-slate-50 hover:bg-indigo-50 border border-slate-100" onclick="window.showAlert('Fitur Chat ke ${u.name} sedang dalam pemeliharaan server.')">
+                        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center border border-white shrink-0"><i class="fas fa-user"></i></div>
+                        <div>
+                            <p class="font-black text-sm text-slate-800 uppercase leading-none">${u.name}</p>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">${u.role}</p>
+                        </div>
+                    </div>
+                `);
+            });
+        };
+
+        window.sendChatMessage = () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
+            const box = document.getElementById('chat-messages');
+            const time = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+            box.insertAdjacentHTML('beforeend', `
+                <div class="flex justify-end">
+                    <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3 max-w-[75%] shadow-sm">
+                        <p class="text-sm font-medium leading-snug">${text}</p>
+                        <p class="text-[9px] text-indigo-200 mt-2 text-right font-bold">${time}</p>
+                    </div>
+                </div>
+            `);
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+            
+            setTimeout(() => {
+                box.insertAdjacentHTML('beforeend', `
+                    <div class="flex justify-start">
+                        <div class="bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-none px-5 py-3 max-w-[75%] shadow-sm">
+                            <p class="text-sm font-medium leading-snug">Pesan diterima. Admin akan membalas segera.</p>
+                            <p class="text-[9px] text-slate-400 mt-2 text-left font-bold">${new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
+                        </div>
+                    </div>
+                `);
+                box.scrollTop = box.scrollHeight;
+            }, 1000);
+        };
+
+        window.triggerPrintInvoice = () => {
+            if(!window.activeProject) return;
+            const proj = window.activeProject;
+            const projDevices = window.dbDevices.filter(d => d.projectId === proj.id);
+            const liveKwh = projDevices.reduce((sum, d) => sum + d.baseData, 0);
+            const custObj = window.dbUsers.find(u => u.username === proj.custEmail) || {};
+
+            const biayaNormal = proj.baseline * TARIF_PLN;
+            const biayaAktual = liveKwh * TARIF_PLN;
+            const savingIdr = Math.max(0, biayaNormal - biayaAktual);
+            const porsiInvestorGross = savingIdr * 0.7; 
+
+            document.getElementById('inv-date').innerText = "Tanggal: " + new Date().toLocaleDateString('id-ID');
+            document.getElementById('inv-cust-name').innerText = custObj.name || proj.custEmail;
+            document.getElementById('inv-cust-loc').innerText = proj.location;
+            
+            document.getElementById('inv-val-normal').innerText = formatIDR(biayaNormal);
+            document.getElementById('inv-val-actual').innerText = formatIDR(biayaAktual);
+            document.getElementById('inv-val-saving').innerText = formatIDR(savingIdr);
+            document.getElementById('inv-val-total').innerText = formatIDR(porsiInvestorGross);
+
+            document.body.classList.add('invoice-mode');
+            setTimeout(() => {
+                window.print();
+                document.body.classList.remove('invoice-mode');
+            }, 500);
+        };
+
+        document.getElementById('iot-sim-toggle').addEventListener('change', e => isSimRunning = e.target.checked);
+        setInterval(() => {
+            if(!isSimRunning || window.dbDevices.length === 0) return;
+            let didUpdate = false;
+            window.dbDevices.forEach(d => {
+                if(d.status === 'online' && d.power) {
+                    const baseConsumption = Math.floor(Math.random() * 2) + 1; 
+                    const tempFactor = (30 - d.temp) * 0.1; 
+                    d.baseData += Math.round(baseConsumption + tempFactor);
+                    didUpdate = true;
+                }
+            });
+            if(didUpdate && !document.getElementById('view-iot').classList.contains('hidden-el')) refreshUI();
+            if(didUpdate && !document.getElementById('view-finance').classList.contains('hidden-el')) refreshUI();
+        }, 5000); 
+
+        // Initialization Delay Simulation
+        setTimeout(() => {
+            document.getElementById('cloud-loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('cloud-loader').style.display = 'none';
+                document.getElementById('auth-screen').classList.remove('hidden-el');
+                window.isOfflineMode = true; // Forcing local mode for guaranteed logic execution
+                seedLocalData(); // Seed data instantly so login never fails
+            }, 500);
+        }, 1500);
+
+    </script>
+</body>
+</html>
