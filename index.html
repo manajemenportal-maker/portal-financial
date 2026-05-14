@@ -360,24 +360,65 @@
 
                 <!-- 4. MASTER PENGGUNA (Hanya Admin) -->
                 <div id="view-users" class="hidden-el space-y-8">
+                    
+                    <!-- Tabel Customer -->
                     <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden">
-                        <div class="p-6 border-b border-slate-700 flex justify-between items-center">
-                            <h2 class="text-lg font-bold text-white uppercase tracking-widest">Master Database Pengguna</h2>
+                        <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-blue-900/20">
+                            <h2 class="text-lg font-bold text-blue-400 uppercase tracking-widest"><i class="fas fa-building mr-2"></i>Database Customer</h2>
                         </div>
                         <div class="overflow-x-auto p-4">
                             <table class="w-full text-left whitespace-nowrap">
                                 <thead class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-700">
                                     <tr>
-                                        <th class="py-4 px-4 font-bold">Identitas Akun</th>
-                                        <th class="py-4 px-4 font-bold">Peran (Role)</th>
-                                        <th class="py-4 px-4 font-bold text-center">Status Tier Investor</th>
+                                        <th class="py-4 px-4 font-bold">Identitas Perusahaan</th>
+                                        <th class="py-4 px-4 font-bold">Status Akun</th>
                                         <th class="py-4 px-4 font-bold text-center">Aksi Verifikasi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="users-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
+                                <tbody id="customers-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
                             </table>
                         </div>
                     </div>
+
+                    <!-- Tabel Investor -->
+                    <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden">
+                        <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-amber-900/20">
+                            <h2 class="text-lg font-bold text-amber-400 uppercase tracking-widest"><i class="fas fa-hand-holding-usd mr-2"></i>Database Investor</h2>
+                        </div>
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-700">
+                                    <tr>
+                                        <th class="py-4 px-4 font-bold">Identitas Investor</th>
+                                        <th class="py-4 px-4 font-bold">Status Akun</th>
+                                        <th class="py-4 px-4 font-bold text-center">Paket (Tier)</th>
+                                        <th class="py-4 px-4 font-bold text-center">Aksi Verifikasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="investors-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Mitra / Sales -->
+                    <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden">
+                        <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-emerald-900/20">
+                            <h2 class="text-lg font-bold text-emerald-400 uppercase tracking-widest"><i class="fas fa-handshake mr-2"></i>Database Mitra / Sales</h2>
+                        </div>
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="text-slate-400 text-[10px] uppercase tracking-widest border-b border-slate-700">
+                                    <tr>
+                                        <th class="py-4 px-4 font-bold">Identitas Rekanan</th>
+                                        <th class="py-4 px-4 font-bold">Status Akun</th>
+                                        <th class="py-4 px-4 font-bold text-center">Aksi Verifikasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sales-tbody" class="divide-y divide-slate-700/50 text-sm text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- 5. MASTER KONTRAK / PROYEK (Hanya Admin) -->
@@ -739,9 +780,17 @@
 
         // --- MODUL MASTER PENGGUNA ---
         window.renderUsers = () => {
-            const tbody = document.getElementById('users-tbody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
+            const tbCust = document.getElementById('customers-tbody');
+            const tbInv = document.getElementById('investors-tbody');
+            const tbSales = document.getElementById('sales-tbody');
+            
+            if(!tbCust || !tbInv || !tbSales) return;
+            
+            tbCust.innerHTML = '';
+            tbInv.innerHTML = '';
+            tbSales.innerHTML = '';
+
+            let custCount = 0, invCount = 0, salesCount = 0;
 
             dbUsers.forEach(u => {
                 if(u.role === 'admin') return; // Sembunyikan admin utama dari tabel
@@ -756,18 +805,51 @@
                     btn = `<button onclick="deleteUser('${u.id}')" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors w-full">Hapus Akun</button>`;
                 }
 
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="hover:bg-slate-700/30 border-b border-slate-700/50">
-                        <td class="py-3 px-4">
-                            <p class="font-bold text-white uppercase">${u.name}</p>
-                            <p class="text-[10px] text-slate-400">${u.username}</p>
-                        </td>
-                        <td class="py-3 px-4"><span class="text-xs font-black text-indigo-400 uppercase tracking-widest">${u.role}</span><br>${statBadge}</td>
-                        <td class="py-3 px-4 text-center"><span class="font-bold text-amber-400">${tierText}</span></td>
-                        <td class="py-3 px-4 w-32">${btn}</td>
-                    </tr>
-                `);
+                if (u.role === 'customer') {
+                    tbCust.insertAdjacentHTML('beforeend', `
+                        <tr class="hover:bg-slate-700/30 border-b border-slate-700/50">
+                            <td class="py-3 px-4">
+                                <p class="font-bold text-white uppercase">${u.name}</p>
+                                <p class="text-[10px] text-slate-400">${u.username}</p>
+                            </td>
+                            <td class="py-3 px-4">${statBadge}</td>
+                            <td class="py-3 px-4 w-32">${btn}</td>
+                        </tr>
+                    `);
+                    custCount++;
+                } else if (u.role === 'investor') {
+                    tbInv.insertAdjacentHTML('beforeend', `
+                        <tr class="hover:bg-slate-700/30 border-b border-slate-700/50">
+                            <td class="py-3 px-4">
+                                <p class="font-bold text-white uppercase">${u.name}</p>
+                                <p class="text-[10px] text-slate-400">${u.username}</p>
+                            </td>
+                            <td class="py-3 px-4">${statBadge}</td>
+                            <td class="py-3 px-4 text-center"><span class="font-bold text-amber-400">${tierText}</span></td>
+                            <td class="py-3 px-4 w-32">${btn}</td>
+                        </tr>
+                    `);
+                    invCount++;
+                } else if (u.role === 'sales') {
+                    tbSales.insertAdjacentHTML('beforeend', `
+                        <tr class="hover:bg-slate-700/30 border-b border-slate-700/50">
+                            <td class="py-3 px-4">
+                                <p class="font-bold text-white uppercase">${u.name}</p>
+                                <p class="text-[10px] text-slate-400">${u.username}</p>
+                            </td>
+                            <td class="py-3 px-4">${statBadge}</td>
+                            <td class="py-3 px-4 w-32">${btn}</td>
+                        </tr>
+                    `);
+                    salesCount++;
+                }
             });
+
+            const emptyMsg = (colspan) => `<tr><td colspan="${colspan}" class="py-6 text-center text-slate-500 italic text-xs">Belum ada entitas terdaftar.</td></tr>`;
+            
+            if(custCount === 0) tbCust.innerHTML = emptyMsg(3);
+            if(invCount === 0) tbInv.innerHTML = emptyMsg(4);
+            if(salesCount === 0) tbSales.innerHTML = emptyMsg(3);
         };
 
         window.verifyUser = (id) => {
